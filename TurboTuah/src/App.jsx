@@ -1,15 +1,11 @@
-import { useState } from 'react'
-import './App.css'
+import React, { useEffect, useState } from 'react';
+import './index.css';
+import Loginform from './components/Loginform'
 
-function App() {
-
+const App = () => {
   return (
+    <Loginform/>
+  );
+};
 
-    
-    <>
-    Yes king
-    </>
-  )
-}
-
-export default App
+export default App;

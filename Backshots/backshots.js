@@ -2,28 +2,62 @@ require("dotenv").config();
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const mysql = require("mysql2");
 const cors = require("cors");
-
+const con = require("./db/db");
 const app = express();
+
 app.use(express.json());
 app.use(cors());
 
-// Create MySQL connection
-const con = mysql.createConnection({
-  host: process.env.DB_HOST,        
-  user: process.env.DB_USER,        
-  password: process.env.DB_PASSWORD, 
-  database: process.env.DB_NAME     
+// PLACE EVERYTHING NEATLY IN FILES, to avoid confusion i guess
+
+
+
+// Signup
+
+app.post("/api/signup", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required." });
+  }
+
+  try {
+    // Checking if the user already exists in the database
+    const [existingUser] = await new Promise((resolve, reject) => {
+      con.query("SELECT * FROM users WHERE email = ?", [email], (err, results) => {
+        if (err) reject(err);
+        else resolve([results]);
+      });
+    });
+
+    if (existingUser.length > 0) {
+      return res.status(400).json({ error: "Email already in use." });
+    }
+
+    // Encrypting the password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    await new Promise((resolve, reject) => {
+      con.query(
+        "INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)",
+        [email, hashedPassword, null],
+        (err, results) => {
+          if (err) reject(err);
+          else resolve(results);
+        }
+      );
+    });
+
+    res.status(201).json({ message: "User registered successfully!" });
+
+  } catch (error) {
+    console.error("Signup Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
-con.connect((err) => {
-  if (err) {
-    console.error("Error connecting to MySQL:", err);
-    return;
-  }
-  console.log("Connected to MySQL database!");
-});
 
 // Login API
 

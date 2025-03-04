@@ -26,5 +26,4 @@ async function createUser(email, password) {
   });
 }
 
-// Example user
 createUser('tester@example.com', 'password123456');

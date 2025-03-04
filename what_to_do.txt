@@ -1,6 +1,0 @@
-Implement authentication system jwt for login form
-
-add user profile
-
-add other users
-

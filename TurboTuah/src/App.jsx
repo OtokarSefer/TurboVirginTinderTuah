@@ -19,7 +19,7 @@ function App() {
       const data = await response.json();
       console.log("Login successful:", data);
 
-      return data; // Send back user data & token
+      return data;
     } catch (error) {
       console.error("Login error:", error.message);
       throw error;

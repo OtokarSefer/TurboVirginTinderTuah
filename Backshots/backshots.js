@@ -1,32 +1,22 @@
-const bodyParser = require("body-parser");
-const path = require("path");
-const mysql = require("mysql2");
+require("dotenv").config();
 const express = require("express");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const mysql = require("mysql2");
+const cors = require("cors");
+
 const app = express();
-
-// Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json()); // Add JSON body parser
-app.use(express.static(path.join(__dirname, "..", "build")));
-app.use(express.static("public"));
-
-// CORS Headers
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  next();
-});
+app.use(express.json());
+app.use(cors());
 
 // Create MySQL connection
 const con = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "Mybr41n15",
-  database: "users",
+  host: process.env.DB_HOST,        
+  user: process.env.DB_USER,        
+  password: process.env.DB_PASSWORD, 
+  database: process.env.DB_NAME     
 });
 
-// Connect to MySQL
 con.connect((err) => {
   if (err) {
     console.error("Error connecting to MySQL:", err);
@@ -35,33 +25,62 @@ con.connect((err) => {
   console.log("Connected to MySQL database!");
 });
 
-// Example route to fetch users
-app.get("/users", (req, res) => {
-  const sql = "SELECT * FROM users";
-  con.query(sql, (err, results) => {
-    if (err) {
-      console.error("Error executing query:", err);
-      return res.status(500).json({ message: "Database error" });
+// Login API
+
+app.post("/api/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required." });
+  }
+
+  try {
+    console.log("Checking user in database for email:", email);
+
+    const [results] = await new Promise((resolve, reject) => {
+      con.query("SELECT * FROM users WHERE email = ?", [email], (err, results) => {
+        if (err) {
+          console.error("Database Query Error:", err);
+          reject(err);
+        } else {
+          resolve([results]);
+        }
+      });
+    });
+
+    if (results.length === 0) {
+      console.log("No user found with this email");
+      return res.status(401).json({ error: "Invalid credentials" });
     }
-    res.json(results); // Send the results as JSON
-  });
+
+    const user = results[0];
+    console.log("User found:", user.email);
+    console.log("Stored hash in DB:", user.password_hash);
+    console.log("Entered password:", password);
+
+    const passwordMatch = await bcrypt.compare(password, user.password_hash);
+
+    if (!passwordMatch) {
+      console.log("Password not correct dumass");
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    console.log("Login successful!");
+
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_TOKEN, { expiresIn: "1h" });
+
+    res.json({ token, user: { id: user.id, email: user.email } });
+
+  } catch (error) {
+    console.error("Server Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
-// Default route
 app.get("/", (req, res) => {
-  res.send("Welcome to the server!");
+  res.send("Server is running!");
 });
 
-// Handle 404 errors
-app.use((req, res) => {
-  res.status(404).json({ message: "Route not found" });
-});
 
-// Start the server
-const port = 3001;
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
-
-// Export the connection for use in other modules (if needed)
-module.exports = con;
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

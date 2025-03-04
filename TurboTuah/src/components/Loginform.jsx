@@ -1,8 +1,10 @@
 import { useState } from "react";
 import './Loginform.css';
 import Card from "./UI/Card";
+import Popupad from "./popupad";
 
-function Loginform({ login }) {
+
+const Loginform = ({ login }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
@@ -25,7 +27,7 @@ function Loginform({ login }) {
 
       if (response.token) {
         localStorage.setItem('authToken', response.token);
-        console.log('Login successful!');
+        console.log('Login token successful!');
       }
     } catch (error) {
       setErrors({ global: 'Invalid credentials or network error.' });
@@ -49,6 +51,7 @@ function Loginform({ login }) {
       </div>
       <button type="submit">Login</button>
     </form>
+    <Popupad/>
   </Card>
   );
 }

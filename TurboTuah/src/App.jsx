@@ -8,13 +8,12 @@ import {
 } from "react-router-dom";
 import Home from "./pages/index";
 import Contact from "./pages/contact";
-import Blogs from "./pages/cringe";
 import About from "./pages/about";
 
 function App() {
   const handleLogin = async (email, password) => {
     try {
-      console.log("Sending login request...", { email, password });
+      // console.log("Sending login request...", { email, password }); Just to not log the email and password
 
       const response = await fetch("http://localhost:5000/api/login", {
         method: "POST",
@@ -26,8 +25,8 @@ function App() {
         throw new Error("Invalid credentials");
       }
 
-      const data = await response.json();
-      console.log("Login successful:", data);
+      const data = await response.json(); 
+      console.log("Login successful!");
 
       return data;
     } catch (error) {
@@ -36,7 +35,7 @@ function App() {
     }
   };
 
-  return    ( 
+  return( 
   <Router>
     <Routes>
         <Route path="/" element={<Loginform login={handleLogin}/>} />

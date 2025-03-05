@@ -4,10 +4,12 @@ import Card from "./UI/Card";
 import Popupad from "./popupad";
 
 
-const Loginform = ({ login }) => {
+const Loginform = ({ login, setIsLoggedIn }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,6 +30,7 @@ const Loginform = ({ login }) => {
       if (response.token) {
         localStorage.setItem('authToken', response.token);
         console.log('Login token successful!');
+        setIsLoggedIn(true)
       }
     } catch (error) {
       setErrors({ global: 'Invalid credentials or network error.' });

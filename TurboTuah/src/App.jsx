@@ -5,12 +5,16 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
+  Navigate
 } from "react-router-dom";
 import Home from "./pages/index";
 import Contact from "./pages/contact";
 import About from "./pages/about";
 
 function App() {
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  console.log(isLoggedIn)
   const handleLogin = async (email, password) => {
     try {
       // console.log("Sending login request...", { email, password }); Just to not log the email and password
@@ -32,14 +36,30 @@ function App() {
     } catch (error) {
       console.error("Login error:", error.message);
       throw error;
-    }
+    } 
   };
 
   return( 
   <Router>
+
     <Routes>
-        <Route path="/" element={<Loginform login={handleLogin}/>} />
-        <Route exact path="/home" element={<Home />} />
+        <Route
+          path="/"
+          element={
+            isLoggedIn ? (
+              <Navigate to="/home" /> 
+            ) : (
+              <Loginform login={handleLogin} setIsLoggedIn={setIsLoggedIn} />
+            )
+          }
+        />
+
+        <Route
+          path="/home"
+          element={
+            isLoggedIn ? <Home setIsLoggedIns={setIsLoggedIn} /> : <Navigate to="/" /> 
+          }
+        />
         <Route path="/about" element={<About />} />
         <Route
             path="/contact"
@@ -48,5 +68,7 @@ function App() {
     </Routes>
   </Router>
 )}
+
+
 
 export default App;

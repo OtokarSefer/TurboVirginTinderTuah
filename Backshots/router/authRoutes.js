@@ -9,4 +9,7 @@ router.post('/signup', createUser);
 // POST /api/login - Login route
 router.post('/login', loginUser);
 
+
+// Some other routes in the future:
+
 module.exports = router;

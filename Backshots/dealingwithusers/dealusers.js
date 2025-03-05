@@ -10,7 +10,7 @@ const createUser = async (req, res) => {
     }
   
     try {
-      // Checking if the user already exists in the database
+      // Checking if the user already  exists in the database
       const [existingUser] = await new Promise((resolve, reject) => {
         con.query("SELECT * FROM users WHERE email = ?", [email], (err, results) => {
           if (err) reject(err);
@@ -61,7 +61,7 @@ const loginUser = async (req, res) => {
         if (err) {
           console.error("Database Query Error:", err);
           reject(err);
-        } else {
+        } else { 
           resolve([results]);
         }
       });

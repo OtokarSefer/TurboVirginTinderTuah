@@ -16,10 +16,10 @@ app.use(cors());
 // Signup
 
 app.post("/api/signup", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, name } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required." });
+  if (!email || !password || !name) {
+    return res.status(400).json({ error: "Please enter valid email, password and username, dumass" });
   }
 
   try {
@@ -42,7 +42,7 @@ app.post("/api/signup", async (req, res) => {
     await new Promise((resolve, reject) => {
       con.query(
         "INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)",
-        [email, hashedPassword, null],
+        [email, hashedPassword, name],
         (err, results) => {
           if (err) reject(err);
           else resolve(results);
@@ -99,11 +99,12 @@ app.post("/api/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    console.log("Login successful!");
+    console.log(`Login successful! User's email: ${user.email}, User's name: ${user.name}`);
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_TOKEN, { expiresIn: "1h" });
 
     res.json({ token, user: { id: user.id, email: user.email } });
+    console.log(token)
 
   } catch (error) {
     console.error("Server Error:", error);

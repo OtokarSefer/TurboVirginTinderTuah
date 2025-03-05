@@ -7,6 +7,7 @@ import "reactjs-popup/dist/index.css";
 const Popupad = () => {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+  const [signupUsername, setSignupUsername] = useState("");
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -29,6 +30,12 @@ const Popupad = () => {
       newErrors.password = "Password must be at least 6 characters";
     }
 
+    if (!signupUsername) {
+        newErrors.username = "Username is required";
+      } else if (signupUsername.length < 5) {
+        newErrors.username = "Username must be at least 5 characters";
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -40,7 +47,7 @@ const Popupad = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email: signupEmail, password: signupPassword }),
+        body: JSON.stringify({ email: signupEmail, password: signupPassword, name: signupUsername }),
       });
 
       const data = await response.json();
@@ -51,6 +58,7 @@ const Popupad = () => {
         setSuccessMessage("Account created successfully!");
         setSignupEmail("");
         setSignupPassword("");
+        setSignupUsername("");
       }
     } catch (error) {
       setErrors({ global: "Something went wrong. Please try again." });
@@ -67,6 +75,18 @@ const Popupad = () => {
               {successMessage && <div className="success">{successMessage}</div>}
 
               <h3>Complete the signup form</h3>
+
+
+              <div>
+                <label>Username:</label>
+                <input
+                  type="username"
+                  value={signupUsername}
+                  onChange={(e) => setSignupUsername(e.target.value)}
+                />
+                {errors.username && <div className="error">{errors.username}</div>}
+              </div>
+
 
               <div>
                 <label>Email:</label>

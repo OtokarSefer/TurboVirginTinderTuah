@@ -25,7 +25,7 @@ const createUser = async (req, res) => {
       // Encrypting the password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
-  
+      
       await new Promise((resolve, reject) => {
         con.query(
           "INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)",

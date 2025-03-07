@@ -1,21 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import './Loginform.css';
 import Card from "./UI/Card";
 import Popupad from "./popupad";
-
+import Timer from './Timer'
 
 const Loginform = ({ login, setIsLoggedIn }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
+  const [canRun, setCanRun] = useState(false)
+  const [fulldisabled, setDisabled] = useState(false)
 
+// Every second and every canRun switch calls the useEffect thingy, and then checks if the parameters fit. 
+// All of the code should go under the e.preventDefault learn from my mistakes, it refreshed the page and makes your life more miserable maybe.
 
+  const handleTimerFinish = () => {
+    setDisabled(false); 
+    setCanRun(false)
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setErrors({});
+    if (fulldisabled) return;
 
+    console.log("Becoming fulldisabled and logging in ", {email})
+
+    setDisabled(true)
+    setCanRun(true)
+
+    setErrors({});
     let validationErrors = {};
     if (!email.includes('@')) validationErrors.email = 'Email must be valid.';
     if (password.length < 6) validationErrors.password = 'Password must be at least 6 characters.';
@@ -23,6 +37,7 @@ const Loginform = ({ login, setIsLoggedIn }) => {
       setErrors(validationErrors);
       return;
     }
+
 
     try {
       const response = await login(email, password);
@@ -52,8 +67,12 @@ const Loginform = ({ login, setIsLoggedIn }) => {
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         {errors.password && <div className="error">{errors.password}</div>}
       </div>
-      <button type="submit">Login</button>
+      <button type="submit" disabled={fulldisabled}>
+        {!fulldisabled ? "Login" : "nah"}
+      </button>
     </form>
+    {canRun && <Timer onTimerFinish={handleTimerFinish}/>
+    }
     <Popupad/>
   </Card>
   );

@@ -49,7 +49,7 @@ function App() {
             isLoggedIn ? (
               <Navigate to="/home" /> 
             ) : (
-              <Loginform login={handleLogin} setIsLoggedIn={setIsLoggedIn} />
+              <Loginform login={handleLogin} setIsLoggedIn={setIsLoggedIn} isLoggedIn={isLoggedIn}/>
             )
           }
         />
@@ -57,7 +57,7 @@ function App() {
         <Route
           path="/home"
           element={
-            isLoggedIn ? <Home setIsLoggedIns={setIsLoggedIn} /> : <Navigate to="/" /> 
+            isLoggedIn ? <Home setIsLoggedIns={setIsLoggedIn} isLoggedIn={isLoggedIn} /> : <Navigate to="/" /> 
           }
         />
         <Route path="/about" element={<About />} />

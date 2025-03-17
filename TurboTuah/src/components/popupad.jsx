@@ -8,8 +8,11 @@ const Popupad = () => {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupUsername, setSignupUsername] = useState("");
+  const [signupCap, setSignupCap] = useState("");
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
+  const [canCap, setcanCap] = useState(false);
+  const [isCooldown, setIsCooldown] = useState(false);
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -41,29 +44,55 @@ const Popupad = () => {
       return;
     }
 
-    try {
-      const response = await fetch("http://localhost:5000/api/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email: signupEmail, password: signupPassword, name: signupUsername }),
+    const apiCall = async (url, method, body) => {
+      try {
+        const response = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+  
+        const data = await response.json();
+  
+        if (!response.ok) {
+          setErrors({ global: data.error || "Something went wrong." });
+          return null; // Return null on error
+        }
+  
+        return data; // Return data on success
+      } catch (error) {
+        setErrors({ global: "Something went wrong. Please try again." });
+        return null;
+      }
+    };
+  
+    if (!canCap) {
+      // Request CAPTCHA
+      const captchaResponse = await apiCall("http://localhost:5000/api/captcha", "POST", { email: signupEmail });
+  
+      if (captchaResponse) {
+        setSuccessMessage("CAPTCHA SENT MFER, PLEASE GO AND VERIFY YOURSELF");
+        setcanCap(true);
+      }
+    } else {
+      const signupResponse = await apiCall("http://localhost:5000/api/signup", "POST", {
+        email: signupEmail,
+        password: signupPassword,
+        name: signupUsername,
+        captcha: signupCap,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setErrors({ global: data.error || "Signup failed" });
-      } else {
+  
+      if (signupResponse) {
         setSuccessMessage("Account created successfully!");
         setSignupEmail("");
         setSignupPassword("");
         setSignupUsername("");
+        setSignupCap("");
+        setcanCap(false);
       }
-    } catch (error) {
-      setErrors({ global: "Something went wrong. Please try again." });
     }
-  };
+    setTimeout(() => setIsCooldown(false), 3000)
+  }    
 
   return (
     <div>
@@ -75,8 +104,6 @@ const Popupad = () => {
               {successMessage && <div className="success">{successMessage}</div>}
 
               <h3>Complete the signup form</h3>
-
-
               <div>
                 <label>Username:</label>
                 <input
@@ -108,7 +135,21 @@ const Popupad = () => {
                 {errors.password && <div className="error">{errors.password}</div>}
               </div>
 
-              <button type="submit">Sign Up</button>
+
+              {canCap && 
+              <div>
+                <label>Enter captcha here:</label>
+                  <input
+                    type="cap"
+                    value={signupCap}
+                    onChange={(e) => setSignupCap(e.target.value)}
+                  />
+                  {errors.captcha && <div className="error">{errors.captcha}</div>}
+              </div>}
+
+              <button type="submit" onClick={handleSignup} disabled={isCooldown}>
+                {isCooldown ? "Cooldown..." : "Sign Up"}
+              </button>
             </form>
             <button onClick={() => close()}>Close</button>
           </div>

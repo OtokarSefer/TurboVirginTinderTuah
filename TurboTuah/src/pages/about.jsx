@@ -1,15 +1,15 @@
-// Filename - pages/about.js
-
-import React from "react";
+import Card from "../components/UI/Card";
 
 const About = () => {
     return (
-        <div>
-            <h1>
-                TwinderTuah is a dating portal
-                for geeking midgets.
-            </h1>
-        </div>
+        <Card className='about'>
+            <div>
+                <h1>
+                    TwinderTuah is a dating portal
+                    for geeking midgets.
+                </h1>
+            </div>
+        </Card>
     );
 };
 

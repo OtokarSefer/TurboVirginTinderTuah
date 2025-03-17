@@ -1,12 +1,17 @@
+require("dotenv").config();
 const bcrypt = require('bcryptjs');
 const con = require('../db/db'); 
 const jwt = require('jsonwebtoken')
+const nodemailer = require('nodemailer')
+
+
+const captchas = {}
 
 const createUser = async (req, res) => {
-    const { email, password, name } = req.body;
+    const { email, password, name, captcha } = req.body;
   
-    if (!email || !password || !name) {
-      return res.status(400).json({ error: "Please enter valid email, password and username, dumass" });
+    if (!email || !password || !name || !captcha) {
+      return res.status(400).json({ error: "Please enter valid username, email, password, captcha, dumass" });
     }
   
     try {
@@ -21,7 +26,14 @@ const createUser = async (req, res) => {
       if (existingUser.length > 0) {
         return res.status(400).json({ error: "Email already in use." });
       }
-  
+
+      if (captchas[email] !== parseInt(captcha)) {
+        return res.status(400).json("Wrong captcha, your bad");
+      }
+      
+
+      delete captchas[email]
+
       // Encrypting the password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
@@ -92,11 +104,43 @@ const loginUser = async (req, res) => {
     console.log(token)
 
   } catch (error) {
-    console.error("Server Error:", error);
+    console.error("Server Error:", error);    
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
+const sendCaptcha = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) return res.status(400).json({ error: "Email is required" });
+
+  const captcha = Math.floor(100000 + Math.random() * 900000);
+  captchas[email] = captcha;
+
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    auth: {
+      user: process.env.GNAME,
+      pass: process.env.GPASS, 
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.GNAME,
+    to: email,
+    subject: "Your CAPTCHA Code",
+    text: `Your verification code is: ${captcha}`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    res.json({ message: "Captcha sent successfully!" });
+  } catch (error) {
+    console.error("Email error:", error);
+    res.status(500).json({ error: "Failed to send captcha email." });
+  }
+};
 
 
-module.exports = { createUser, loginUser }
+module.exports = { createUser, loginUser, sendCaptcha }

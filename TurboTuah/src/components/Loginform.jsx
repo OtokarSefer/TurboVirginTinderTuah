@@ -4,7 +4,7 @@ import Card from "./UI/Card";
 import Popupad from "./popupad";
 import Timer from './Timer'
 
-const Loginform = ({ login, setIsLoggedIn }) => {
+const Loginform = ({ login, setIsLoggedIn, isLoggedIn }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
@@ -46,6 +46,7 @@ const Loginform = ({ login, setIsLoggedIn }) => {
         localStorage.setItem('authToken', response.token);
         console.log('Login token successful!');
         setIsLoggedIn(true)
+        localStorage.setItem('isLoggedIn', 'true')
       }
     } catch (error) {
       setErrors({ global: 'Invalid credentials or network error.' });

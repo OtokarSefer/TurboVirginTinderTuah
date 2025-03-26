@@ -40,3 +40,136 @@
 .read-the-docs {
   color: #888;
 }
+
+
+/*******************************************************************************
+  * Pico CSS  - responsive nav
+  * Grows vertically (mobile-first). Changes back to horizontal growth on higher
+  * resolutions.
+  *****************************************************************************/
+
+  :where(menu, [role="menu"]),
+  :where(menu, [role="menu"]) > [role="menuitem"] {
+    flex-direction: column;
+    position: relative;
+  }
+  
+  @media (min-width: 576px) {
+    :where(menu, [role="menu"]),
+    :where(menu, [role="menu"]) > [role="menuitem"] {
+      flex-direction: row;
+    }
+  }
+  
+  /*******************************************************************************
+    * Pure CSS burger menu
+    * Styles a parent + checkbox to look like 3 stacked lines when unchecked and
+    * as a cross when checked. Includes animations.
+    *****************************************************************************/
+  
+  [data-role="burger"] {
+    opacity: 0.8;
+    cursor: pointer;
+    border-radius: 10%;
+    box-sizing: border-box;
+    background-color: transparent;
+    height: 24px;
+    width: 28px;
+    padding: 0;
+    margin: 0;
+    border: 0 solid #e7edf2;
+  }
+  
+  [data-role="burger"] > input[type="checkbox"] {
+    height: 4px;
+    width: 28px;
+    border: none;
+    background-color: #e7edf2;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 0 4px 0 #161724;
+    position: relative;
+    margin-inline: 0;
+  }
+  
+  [data-role="burger"] > input[type="checkbox"]:checked {
+    background-image: none;
+    background-color: transparent;
+  }
+  
+  [data-role="burger"] > input[type="checkbox"]::before, [data-role="burger"] > input[type="checkbox"]::after {
+    height: 4px;
+    width: 28px;
+    border-radius: 2px;
+    background-color: #e7edf2;
+    position: absolute;
+    content: "";
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 0 4px 0 #161724;
+  }
+  
+  [data-role="burger"] > input[type="checkbox"]::before {
+    top: -10px;
+  }
+  
+  [data-role="burger"] > input[type="checkbox"]::after {
+    top: 10px;
+  }
+  
+  [data-role="burger"] > input[type="checkbox"]:checked::before {
+    box-shadow: none;
+    transform: rotate(45deg) translate(7px, 7px);
+  }
+  
+  [data-role="burger"] > input[type="checkbox"]:checked::after {
+    box-shadow: none;
+    transform: rotate(-45deg) translate(7px, -7px);
+  }
+  
+  /*******************************************************************************
+    * Pure CSS toggle
+    * Uses a checkbox to trigger rules and show/hide related elements.
+    *****************************************************************************/
+  
+  :where(menu, [role="menu"]) {
+    position: relative; /* anchor for children */
+    /* needed otherwise it grows to fit all its children */
+    max-height: calc(var(--pico-line-height) * 1em + var(--pico-nav-element-spacing-vertical)*2);
+  }
+  
+  :where(menu, [role="menu"]) > [role="menuitem"] {
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    background-color: var(--pico-card-background-color);
+  }
+  
+  :where(menu, [role="menu"]):has(> label > input[type="checkbox"]:checked) > [role="menuitem"] {
+    visibility: visible;
+    opacity: 1;
+    z-index: 9999;
+  }
+  
+  /* position the menu button */
+  :where(menu, [role="menu"]) > label {
+    position: absolute;
+    right: 0;
+    top: var(--pico-nav-element-spacing-vertical);
+    padding: var(--pico-nav-element-spacing-vertical) var(--pico-nav-element-spacing-horizontal);
+  }
+  
+  @media (min-width: 576px) {
+    /* hide menu button */
+    :where(menu, nav[role="menu"]) > label {
+      display: none;
+    }
+  
+      /* show all elements */
+    :where(menu, [role="menu"]) > [role="menuitem"] {
+      visibility: visible;
+      opacity: 1;
+      display: flex;
+      top: unset;
+    }
+  }
+  

@@ -3,6 +3,7 @@ import './Loginform.css';
 import Card from "./UI/Card";
 import Popupad from "./popupad";
 import Timer from './Timer'
+<script src=" https://cdn.jsdelivr.net/npm/pico-css-react@1.1.4/lib/index.min.js "></script>
 
 const Loginform = ({ login, setIsLoggedIn, isLoggedIn }) => {
   const [email, setEmail] = useState('');
@@ -13,11 +14,17 @@ const Loginform = ({ login, setIsLoggedIn, isLoggedIn }) => {
 
 // Every second and every canRun switch calls the useEffect thingy, and then checks if the parameters fit. 
 // All of the code should go under the e.preventDefault learn from my mistakes, it refreshed the page and makes your life more miserable maybe.
+  
 
   const handleTimerFinish = () => {
     setDisabled(false); 
     setCanRun(false)
   };
+
+  useEffect(() => {
+    setCanRun(true);
+    setDisabled(true);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,26 +61,24 @@ const Loginform = ({ login, setIsLoggedIn, isLoggedIn }) => {
   };
 
   return (
+    
   <Card className='Loginform'>
-    <h1>Login</h1>
+    <h2>Login</h2>
     <form onSubmit={handleSubmit}>
       {errors.global && <div className="alert">{errors.global}</div>}
       <div>
-        <label>Email:</label>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input type="email" placeholder="Email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/>
         {errors.email && <div className="error">{errors.email}</div>}
       </div>
       <div>
-        <label>Password:</label>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        {errors.password && <div className="error">{errors.password}</div>}
+        <input type="password"  placeholder="Password" autoComplete="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        {errors.password && <div className="error" >{errors.password}</div>}
       </div>
       <button type="submit" disabled={fulldisabled}>
         {!fulldisabled ? "Login" : "nah"}
       </button>
     </form>
-    {canRun && <Timer onTimerFinish={handleTimerFinish}/>
-    }
+    {canRun && <Timer onTimerFinish={handleTimerFinish}/>}
     <Popupad/>
   </Card>
   );

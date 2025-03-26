@@ -99,7 +99,16 @@ const loginUser = async (req, res) => {
     console.log(`Login successful! User's email: ${user.email}, User's name: ${user.name}`);
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_TOKEN, { expiresIn: "1h" });
-
+   
+   
+    res.cookie("authToken", token, {
+      httpOnly: true, 
+      secure: true,  
+      sameSite: "Strict",
+      maxAge: 60 * 60 * 1000, 
+    });
+   
+   
     res.json({ token, user: { id: user.id, email: user.email } });
     console.log(token)
 
@@ -140,7 +149,41 @@ const sendCaptcha = async (req, res) => {
     console.error("Email error:", error);
     res.status(500).json({ error: "Failed to send captcha email." });
   }
+}
+
+
+const getUser = async (req, res) => {
+
+  try {
+    const [results] = await new Promise((resolve, reject) => {
+      con.query(
+        "SELECT * FROM users ",
+        (err, results) => {
+          if (err) {
+            console.error("Database Query Error:", err);
+            reject(err);
+          } else {
+            resolve([results]);
+          }
+        }
+      );
+    });
+
+    if (results.length === 0) {
+      console.log("No user found with this email");
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const user = results[0];
+
+    return res.status(200).json(user);
+
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 
-module.exports = { createUser, loginUser, sendCaptcha }
+
+module.exports = { createUser, loginUser, sendCaptcha, getUser }

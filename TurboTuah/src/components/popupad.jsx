@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Popup from "reactjs-popup";
-import "reactjs-popup/dist/index.css";
+
 // ADD USERNAME TO THE USER MAKING PART
 // It's illegal to update the styling before implementing the functionality
 
@@ -71,7 +71,7 @@ const Popupad = () => {
       const captchaResponse = await apiCall("http://localhost:5000/api/captcha", "POST", { email: signupEmail });
   
       if (captchaResponse) {
-        setSuccessMessage("CAPTCHA SENT MFER, PLEASE GO AND VERIFY YOURSELF");
+        setSuccessMessage("Capthca, PLEASE GO AND VERIFY YOURSELF");
         setcanCap(true);
       }
     } else {
@@ -96,9 +96,10 @@ const Popupad = () => {
 
   return (
     <div>
-      <Popup trigger={<button>Make your account here!</button>} modal nested>
+      <p>Don't have an account?</p>
+      <Popup trigger={<button>Register</button>} modal nested>
         {(close) => (
-          <div>
+           <div style={{ backgroundColor: "lightblue", padding: "20px", borderRadius: "10px" }}>
             <form onSubmit={handleSignup}>
               {errors.global && <div className="alert">{errors.global}</div>}
               {successMessage && <div className="success">{successMessage}</div>}
@@ -151,7 +152,6 @@ const Popupad = () => {
                 {isCooldown ? "Cooldown..." : "Sign Up"}
               </button>
             </form>
-            <button onClick={() => close()}>Close</button>
           </div>
         )}
       </Popup>

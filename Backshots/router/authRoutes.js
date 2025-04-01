@@ -1,5 +1,5 @@
 const express = require('express');
-const { createUser, loginUser, sendCaptcha, getUser } = require('../dealingwithusers/dealusers'); // Import both functions
+const { createUser, loginUser, sendCaptcha, getUser, authenticateToken, changeData } = require('../dealingwithusers/dealusers'); 
 const router = express.Router();
 
 // POST /api/signup - Signup route
@@ -12,8 +12,10 @@ router.post('/login', loginUser);
 router.post('/captcha', sendCaptcha)
 
 // Getting the user /getuser
-router.get('/getUser', getUser)
+router.get('/getUser', authenticateToken,  getUser)
 
 // Some other routes in the future: 
+
+router.patch('/Changeuser', authenticateToken, changeData)
 
 module.exports = router;

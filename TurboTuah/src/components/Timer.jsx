@@ -10,7 +10,7 @@ const Timer = ({ onTimerFinish }) => {
           }, 1000);
 
 
-        if (seconds >= 4) {
+        if (seconds >= 2) {
             clearInterval(intval)
             onTimerFinish()
         }

@@ -10,6 +10,9 @@ const Contact = () => {
                 <h1>
                     Mail us on 
                     yes.org
+                        <br />
+                        <br />
+                    Contact us on: -372 5555 5555!!!
                 </h1>
             </div>
         </Card>

@@ -12,7 +12,11 @@ import {
 import Home from "./pages/home";
 import Contact from "./pages/contact";
 import About from "./pages/about";
+import Navbar from './components/UI/Navbar';
+import LogNavbar from './components/UI/LogNavbar';
 import '@picocss/pico/css/pico.min.css';
+import Chat from './pages/userPages/chat';
+import Match from './pages/userPages/match';
 
 
 
@@ -71,17 +75,7 @@ function App() {
 
   return (
     <Router>
-      <nav role="menu">
-        <label data-role="burger"><input type="checkbox" /></label>
-        <ul role="menubar">
-          <li><strong>TurboTinder</strong></li>
-        </ul>
-        <ul role="menuitem">
-          <li><Link to="/">Login</Link></li>
-          <li><Link to="/contact">Contact</Link></li>
-          <li><Link to="/about">About</Link></li>
-        </ul>
-      </nav>
+      {isLoggedIn ? <LogNavbar setIsLoggedIn={setIsLoggedIn} /> : <Navbar />}
 
       <Routes>
         <Route
@@ -94,17 +88,33 @@ function App() {
             )
           }
         />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
         <Route
           path="/home"
           element={
             isLoggedIn ? <Home setIsLoggedIns={setIsLoggedIn} isLoggedIn={isLoggedIn} /> : <Navigate to="/" />
           }
+          
         />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
+        <Route
+          path="/match"
+          element={
+            isLoggedIn ? <Match/> : <Navigate to="/" />
+          }
+          
+        />
+        <Route
+          path="/chat"
+          element={
+            isLoggedIn ? <Chat/> : <Navigate to="/" />
+          }
+          
+        />
       </Routes>
     </Router>
-  )}
+  );
+}
 
 
 

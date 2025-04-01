@@ -71,7 +71,7 @@ const Popupad = () => {
       const captchaResponse = await apiCall("http://localhost:5000/api/captcha", "POST", { email: signupEmail });
   
       if (captchaResponse) {
-        setSuccessMessage("Capthca, PLEASE GO AND VERIFY YOURSELF");
+        setSuccessMessage("Captcha, PLEASE GO AND VERIFY YOURSELF");
         setcanCap(true);
       }
     } else {
@@ -99,7 +99,7 @@ const Popupad = () => {
       <p>Don't have an account?</p>
       <Popup trigger={<button>Register</button>} modal nested>
         {(close) => (
-           <div style={{ backgroundColor: "lightblue", padding: "20px", borderRadius: "10px" }}>
+           <div style={{ backgroundColor: "black", padding: "20px", borderRadius: "10px" }}>
             <form onSubmit={handleSignup}>
               {errors.global && <div className="alert">{errors.global}</div>}
               {successMessage && <div className="success">{successMessage}</div>}

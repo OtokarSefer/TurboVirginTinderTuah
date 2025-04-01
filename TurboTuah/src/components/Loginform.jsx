@@ -5,6 +5,12 @@ import Popupad from "./popupad";
 import Timer from './Timer'
 <script src=" https://cdn.jsdelivr.net/npm/pico-css-react@1.1.4/lib/index.min.js "></script>
 
+
+
+//  Maybe add ratelimiter the node package to prevent people from spamming the loginform with strange stuff
+
+
+
 const Loginform = ({ login, setIsLoggedIn, isLoggedIn }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,10 +56,10 @@ const Loginform = ({ login, setIsLoggedIn, isLoggedIn }) => {
       const response = await login(email, password);
 
       if (response.token) {
-        localStorage.setItem('authToken', response.token);
+        // localStorage.setItem('authToken', response.token);
         console.log('Login token successful!');
         setIsLoggedIn(true)
-        localStorage.setItem('isLoggedIn', 'true')
+        // localStorage.setItem('isLoggedIn', 'true')
       }
     } catch (error) {
       setErrors({ global: 'Invalid credentials or network error.' });

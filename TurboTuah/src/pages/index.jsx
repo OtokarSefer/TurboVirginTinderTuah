@@ -1,5 +1,3 @@
-// Filename - pages/index.js
-
 import React from "react";
 
 const Home = () => {

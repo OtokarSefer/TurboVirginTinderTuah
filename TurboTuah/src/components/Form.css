@@ -1,0 +1,74 @@
+/* General form styles */
+.form-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 100px auto;
+    padding: 2em;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  h2 {
+    margin-bottom: 1.5em;
+    font-size: 1.5em;
+    text-align: center;
+  }
+  
+  .form-group {
+    width: 100%;
+    margin-bottom: 1.2em;
+  }
+  
+  input {
+    width: 100%;
+    padding: 0.75em;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1em;
+    margin-top: 0.25em;
+    box-sizing: border-box; /* Ensure padding doesn't affect width */
+  }
+  
+  button.submit-button {
+    padding: 1em;
+    width: 100%;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 1.5em;
+    box-sizing: border-box; /* Ensure padding doesn't affect width */
+  }
+  
+  button.submit-button:hover {
+    background-color: #0056b3;
+  }
+  
+  .error-message {
+    color: red;
+    font-size: 0.9em;
+    margin-top: 1em;
+    text-align: center;
+  }
+  
+  .footer {
+    margin-top: 2em;
+    text-align: center;
+  }
+  
+  .signup-link {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  .signup-link:hover {
+    text-decoration: underline;
+  }
+  

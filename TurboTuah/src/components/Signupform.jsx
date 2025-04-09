@@ -1,23 +1,28 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom"; // ⬅️ Add useNavigate
+import { Link } from "react-router-dom";
 import "./Form.css";
 
-const LoginForm = () => {
+const SignUpForm = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const navigate = useNavigate(); // ⬅️ React Router's navigate function
 
-  const handleLogin = async (e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
 
-    if (!username || !password) {
-      setErrorMessage("Both username and password are required.");
+    if (!username || !password || !confirmPassword) {
+      setErrorMessage("All fields are required.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match.");
       return;
     }
 
     try {
-      const response = await fetch("http://localhost:3001/login", {
+      const response = await fetch("http://localhost:3001/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -26,22 +31,21 @@ const LoginForm = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem("token", data.token);
-        alert("Login successful!");
-        navigate("/home"); // ⬅️ Redirect to /home after login
+        alert("User created successfully!");
+        // Redirect to login page or wherever you'd like
       } else {
-        setErrorMessage(data.message || "Login failed.");
+        setErrorMessage(data.message || "Sign Up failed.");
       }
     } catch (error) {
-      setErrorMessage("An error occurred while logging in.");
+      setErrorMessage("An error occurred while signing up.");
       console.error(error);
     }
   };
 
   return (
     <div className="form-container">
-      <h2>Login</h2>
-      <form onSubmit={handleLogin}>
+      <h2>Sign Up</h2>
+      <form onSubmit={handleSignUp}>
         <div className="form-group">
           <input
             type="email"
@@ -62,19 +66,29 @@ const LoginForm = () => {
           />
         </div>
 
+        <div className="form-group">
+          <input
+            type="password"
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+          />
+        </div>
+
         {errorMessage && <div className="error-message">{errorMessage}</div>}
 
-        <button type="submit" className="submit-button">Login</button>
+        <button type="submit" className="submit-button">Sign Up</button>
       </form>
 
       <div className="footer">
         <p>
-          Don't have an account?{" "}
-          <Link to="/signup" className="signup-link">Sign Up</Link>
+          Already have an account?{" "}
+          <Link to="/" className="signup-link">Login</Link>
         </p>
       </div>
     </div>
   );
 };
 
-export default LoginForm;
+export default SignUpForm;

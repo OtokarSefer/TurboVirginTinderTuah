@@ -77,7 +77,7 @@ app.post("/login", (req, res) => {
     return res.status(400).json({ message: "Username and password are required" });
   }
 
-  const sql = "SELECT * FROM users WHERE username = ?";
+    const sql = "SELECT * FROM users WHERE email = ?";
   con.query(sql, [username], async (err, results) => {
     if (err) {
       console.error("Database error:", err);

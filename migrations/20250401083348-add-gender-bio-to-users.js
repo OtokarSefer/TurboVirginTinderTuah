@@ -15,11 +15,33 @@ module.exports = {
       type: Sequelize.INTEGER,
       allowNull: true,
     });
+    await queryInterface.addColumn('Users', 'pic', {
+      type: Sequelize.STRING,
+      defaultValue: 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg',
+      allowNull: false,
+    });
+    await queryInterface.addColumn('Users', 'minAgeP', {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Users', 'maxAgeP', {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+    });
+    await queryInterface.addColumn('Users', 'genderPref', {
+      type: Sequelize.STRING,
+      allowNull: true,
+    });
   },
+  
 
   async down(queryInterface, Sequelize) {
     await queryInterface.removeColumn('Users', 'gender');
     await queryInterface.removeColumn('Users', 'bio');
-    await queryInterface.removeColumn('Users', 'age')
+    await queryInterface.removeColumn('Users', 'age');
+    await queryInterface.removeColumn('Users', 'pic');
+    await queryInterface.removeColumn('Users', 'minAgeP');
+    await queryInterface.removeColumn('Users', 'maxAgeP');
+    await queryInterface.removeColumn('Users', 'genderPref');
   }
 };

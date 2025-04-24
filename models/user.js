@@ -43,6 +43,18 @@ module.exports = (sequelize, DataTypes) => {
     age: {
       type: DataTypes.INTEGER,
       allowNull: true
+    },
+    minAgeP: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    maxAgeP: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    genderPref: {
+      type: DataTypes.STRING,
+      allowNull: true
     }
     }, {
     sequelize,

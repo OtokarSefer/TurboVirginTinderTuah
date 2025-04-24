@@ -71,7 +71,7 @@ const Popupad = () => {
       const captchaResponse = await apiCall("http://localhost:5000/api/captcha", "POST", { email: signupEmail });
   
       if (captchaResponse) {
-        setSuccessMessage("Captcha, PLEASE GO AND VERIFY YOURSELF");
+        setSuccessMessage("Captcha, PLEASE GO AND VERIFY YOURSELF, IT MIGHT BE UNDER SPAM MESSAGES ON THE EMAIL SERVICE!");
         setcanCap(true);
       }
     } else {

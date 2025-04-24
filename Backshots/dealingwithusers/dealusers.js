@@ -4,6 +4,7 @@ const con = require('../db/db');
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
 const { User } = require('../../models');
+const { Op } = require('sequelize')
 
 
 const captchas = {}
@@ -37,7 +38,8 @@ const createUser = async (req, res) => {
       const user = await User.create({
         email,
         password: hashedPassword,
-        name
+        name,
+        pic: 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg'
       });
   
       res.status(201).json({ message: "User registered successfully!" });
@@ -141,7 +143,9 @@ const getUser = async (req, res) => {
       return res.status(400).json({ error: 'User ID is missing' });
     }
 
-    const user = await User.findOne({ where: { id: userId } });
+    const user = await User.findOne({ where: { id: userId }});
+    console.log(user)
+// POST /api/signup - Signup route
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -154,6 +158,11 @@ const getUser = async (req, res) => {
       age: user.age,
       gender: user.gender,
       bio: user.bio,
+      minAgeP: user.minAgeP,
+      maxAgeP: user.maxAgeP,
+      genderPref: user.genderPref
+
+      //  Add the User preferences here!
 
     });
   } catch (err) {
@@ -162,6 +171,57 @@ const getUser = async (req, res) => {
   }
 };
 
+
+const getUsertoMatch = async (req, res) => {
+  try {
+    const userId = req.user.userId; 
+    console.log("User ID from JWT:", userId); 
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is missing' });
+    }
+    const user = await User.findOne({ where: { id: userId }});
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const { minAgeP, maxAgeP, genderPref } = user;
+
+    if (minAgeP == null || maxAgeP == null || !genderPref) {
+      return res.status(400).json({ error: 'User preferences are missing or incomplete.' });
+    }
+
+    const potentialMatches = await User.findAll({
+      where: {
+        id: {
+          [Op.ne]: userId,
+        }
+      },
+    });
+    console.log("Potential Matches:", potentialMatches);
+
+    const formattedMatches = potentialMatches.map(match => ({
+      id: match.id,
+      name: match.name,
+      email: match.email,
+      age: match.age,
+      gender: match.gender,
+      bio: match.bio,
+    }));
+    console.log("req.user:", req.user); // should show { userId: ... }
+    
+    console.log("Formatted Matches: !!!!!!!!!", formattedMatches);
+
+    return res.status(200).json({
+      matches: formattedMatches,
+    });
+
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 
 const authenticateToken = (req, res, next) => {
@@ -185,7 +245,8 @@ const authenticateToken = (req, res, next) => {
 };
 
 const changeData = async (req, res) => {
-  const {name, gender, bio, age}  = req.body
+  const {name, gender, bio, age, minAgeP, maxAgeP, genderPref}  = req.body
+  console.log(req.body)
   try {
     const userId = req.user.userId; 
     console.log("User ID from JWT:", userId); 
@@ -204,7 +265,10 @@ const changeData = async (req, res) => {
     if (gender) user.gender = gender;
     if (bio) user.bio = bio;
     if (age) user.age = age;
-    console.log(name, gender, bio, age)
+    if (minAgeP) user.minAgeP = minAgeP;
+    if (maxAgeP) user.maxAgeP = maxAgeP;
+    if (genderPref) user.genderPref = genderPref;
+    console.log(name, gender, bio, age, minAgeP, maxAgeP, genderPref)
 
     await user.save();
 
@@ -220,4 +284,4 @@ const changeData = async (req, res) => {
 
 module.exports = { createUser, loginUser,
    sendCaptcha, getUser,
-    authenticateToken, changeData }
+    authenticateToken, changeData, getUsertoMatch }

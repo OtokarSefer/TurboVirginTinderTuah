@@ -191,6 +191,8 @@ const Home = () => {
       </Popup>
 
       </Card>
+      <hr />
+      Pending matches
     </div>
   );
 };

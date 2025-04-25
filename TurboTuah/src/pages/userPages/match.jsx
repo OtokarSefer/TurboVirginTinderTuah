@@ -10,6 +10,15 @@ const Match = () => {
     const [matches, setMatches] = useState([]);
 
 
+    const [randomMatch, setRandomMatch] = useState(null);
+
+    useEffect(() => {
+      if (matches && matches.length > 0) {
+        const randomIndex = Math.floor(Math.random() * matches.length);
+        setRandomMatch(matches[randomIndex]);
+      }
+    }, [matches]);
+
     useEffect(() => {
         const fetchUserData = async () => {
           try {
@@ -31,15 +40,41 @@ const Match = () => {
           }
         };
       
-        fetchUserData();
-      }, []);
+      fetchUserData();
+    }, []);
     
-    const handleReject = async (id) => {
-      console.log("no", id)
+    const handleReject = async (e) => {
+      if (matches && matches.length > 0) {
+        const randomIndex = Math.floor(Math.random() * matches.length);
+        setRandomMatch(matches[randomIndex])
+      }
+      const response = await fetch('http://localhost:5000/api/Reject', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: "include", 
+        body: JSON.stringify({ userId: randomMatch.id}),}
+      );
+      console.log("response", response)
+      
+      
     }
 
-    const handleAccept = async (id) => {
-      console.log("yes", id)
+    const handleAccept = async (e) => {
+      if (matches && matches.length > 0) {
+        const randomIndex = Math.floor(Math.random() * matches.length);
+        setRandomMatch(matches[randomIndex])
+      }
+      const response = await fetch('http://localhost:5000/api/Accept', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: "include", 
+        body: JSON.stringify({ userId: randomMatch.id}),}
+      );
+      console.log("response", response)
     }
 
     if (!matches) {
@@ -54,16 +89,17 @@ const Match = () => {
       <div className="match">
         <h1>Swipe for the love of your life</h1>
         <br />
-        {matches.map((currentUser) => (
-          <Card key={currentUser.id}>
-            <p>Name: {currentUser.name}</p>
-            <p>Age: {currentUser.age || 'Age not available'}</p>
-            <p>Gender: {currentUser.gender}</p>
-            <p>BIO: {currentUser.bio}</p>
-            <button onClick={() => handleAccept(currentUser.id)}>Accept into ur life</button>
-            <button onClick={() => handleReject(currentUser.id)}>Reject</button>
+        {randomMatch && (
+          <Card key={randomMatch.id}>
+            <p>Name: {randomMatch.name}</p>
+            <p>Age: {randomMatch.age || 'Age not available'}</p>
+            <p>Gender: {randomMatch.gender}</p>
+            <p>BIO: {randomMatch.bio}</p>
+            <button onClick={() => handleAccept(randomMatch.id)}>Accept into ur life</button>
+            <button onClick={() => handleReject(randomMatch.id)}>Reject</button>
           </Card>
-        ))}
+        )}
+
       </div>
     );
   }

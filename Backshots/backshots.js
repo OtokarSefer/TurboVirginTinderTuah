@@ -8,6 +8,7 @@ const cookieParser = require("cookie-parser");
 
 
 
+
 app.use(express.json());
 app.use(cookieParser()); 
 app.use(
@@ -19,7 +20,7 @@ app.use(
 );
 
 
-// PLACE EVERYTHING NEATLY IN FILES, to avoid confusion i guess
+// PLACE EVERYTHING NEATLY IN FILES, to avoid confusion i guess. nah
 
 app.use('/api', authRoutes);
 

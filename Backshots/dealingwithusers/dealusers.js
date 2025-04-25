@@ -145,7 +145,7 @@ const getUser = async (req, res) => {
 
     const user = await User.findOne({ where: { id: userId }});
     console.log(user)
-// POST /api/signup - Signup route
+    // POST /api/signup - Signup route
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -174,7 +174,7 @@ const getUser = async (req, res) => {
 
 const getUsertoMatch = async (req, res) => {
   try {
-    const userId = req.user.userId; 
+    const userId = req.user.userId;   
     console.log("User ID from JWT:", userId); 
 
     if (!userId) {
@@ -195,10 +195,29 @@ const getUsertoMatch = async (req, res) => {
     const potentialMatches = await User.findAll({
       where: {
         id: {
-          [Op.ne]: userId,
-        }
-      },
+          [Op.ne]: userId, // Not the same user
+        },
+        age: {
+          [Op.between]: [user.minAgeP, user.maxAgeP], // Fit within current user's preferred age range
+        },
+        [Op.or]: [
+          { gender: genderPref },
+          { gender: 'Any' }
+        ],
+        // Mutual match check (the user must also fit into the other user's preferences)
+        minAgeP: {
+          [Op.lte]: user.age,
+        },
+        maxAgeP: {
+          [Op.gte]: user.age,
+        },
+        [Op.or]: [
+          { genderPref: user.gender },
+          { genderPref: 'Any' }
+        ]
+      }
     });
+    
     console.log("Potential Matches:", potentialMatches);
 
     const formattedMatches = potentialMatches.map(match => ({
@@ -279,9 +298,33 @@ const changeData = async (req, res) => {
   }
 }
 
+const RejectionMatch = async (req, res) => {
+// I need to add getting req from frontend and then sending the result tro db
+
+  const { userId } = req.body;
+  const currentUserId = req.user.userId;
+  console.log("Current User ID (REJECT PART):", currentUserId);
+  console.log("User ID to reject:", userId);
+
+
+
+
+
+
+
+}
+
+
+const AcceptMatch = async (req, res) => {
+  
+    const { userId } = req.body;
+    const currentUserId = req.user.userId;
+    console.log("Current User ID (ACCEPT PART):", currentUserId);
+    console.log("Accepted user with the Id:", userId);
+}
 
 
 
 module.exports = { createUser, loginUser,
    sendCaptcha, getUser,
-    authenticateToken, changeData, getUsertoMatch }
+    authenticateToken, changeData, getUsertoMatch, RejectionMatch, AcceptMatch }

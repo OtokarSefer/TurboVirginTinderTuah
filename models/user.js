@@ -23,6 +23,20 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "userId2", 
         otherKey: "userId1"    
       });
+
+      User.belongsToMany(User, {
+        through: models.UserRejections, 
+        as: "RejectedUsers", 
+        foreignKey: "userId1", 
+        otherKey: "userId2" 
+      });
+      
+      User.belongsToMany(User, { 
+        through: models.UserRejections, 
+        as: "RejectedByUsers",  
+        foreignKey: "userId2", 
+        otherKey: "userId1"    
+      });
     }
   }
   User.init({

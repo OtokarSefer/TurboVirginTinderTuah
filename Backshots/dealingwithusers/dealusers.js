@@ -3,9 +3,14 @@ const bcrypt = require('bcryptjs');
 const con = require('../db/db'); 
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
-const { User } = require('../../models');
+const { User, PendingUser } = require('../../models');
 const { Op } = require('sequelize')
 
+
+
+// What more to do? Fix changedata, Get fetching users working correctly,
+//  implement the pending matches for users, and also the rejection, 
+// and actual matching to maybe try and make the chat log.
 
 const captchas = {}
 
@@ -136,40 +141,52 @@ const sendCaptcha = async (req, res) => {
 
 const getUser = async (req, res) => {
   try {
-    const userId = req.user.userId; 
-    console.log("User ID from JWT:", userId); 
+    const userId = req.user.userId; // User ID from JWT
+    console.log("User ID from JWT:", userId);
 
     if (!userId) {
       return res.status(400).json({ error: 'User ID is missing' });
     }
 
-    const user = await User.findOne({ where: { id: userId }});
-    console.log(user)
-    // POST /api/signup - Signup route
+    const user = await User.findOne({ where: { id: userId },
+      attributes: [
+        'id',
+        'name',
+        'email',
+        'age',
+        'pic',
+        'gender',
+        'bio',
+        'minAgeP',
+        'maxAgeP',
+        'genderPref'
+      ]
+    });
+
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    console.log("User pic from database:", user);
     return res.status(200).json({
       id: user.id,
       name: user.name,
       email: user.email,
       age: user.age,
+      pic: user.get('pic'),
       gender: user.gender,
       bio: user.bio,
       minAgeP: user.minAgeP,
       maxAgeP: user.maxAgeP,
-      genderPref: user.genderPref
-
-      //  Add the User preferences here!
-
+      genderPref: user.genderPref,
     });
   } catch (err) {
     console.error("Server error:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 
 const getUsertoMatch = async (req, res) => {
@@ -195,16 +212,15 @@ const getUsertoMatch = async (req, res) => {
     const potentialMatches = await User.findAll({
       where: {
         id: {
-          [Op.ne]: userId, // Not the same user
+          [Op.ne]: userId,
         },
         age: {
-          [Op.between]: [user.minAgeP, user.maxAgeP], // Fit within current user's preferred age range
+          [Op.between]: [user.minAgeP, user.maxAgeP],
         },
         [Op.or]: [
           { gender: genderPref },
           { gender: 'Any' }
         ],
-        // Mutual match check (the user must also fit into the other user's preferences)
         minAgeP: {
           [Op.lte]: user.age,
         },
@@ -215,8 +231,18 @@ const getUsertoMatch = async (req, res) => {
           { genderPref: user.gender },
           { genderPref: 'Any' }
         ]
-      }
+      },
+      attributes: [
+        'id',
+        'name',
+        'email',
+        'age',
+        'pic',
+        'gender',
+        'bio',
+      ]
     });
+    
     
     console.log("Potential Matches:", potentialMatches);
 
@@ -225,11 +251,13 @@ const getUsertoMatch = async (req, res) => {
       name: match.name,
       email: match.email,
       age: match.age,
+      pic: match.get('pic'),
       gender: match.gender,
       bio: match.bio,
     }));
     console.log("req.user:", req.user); // should show { userId: ... }
-    
+    console.log(formattedMatches[0]?.pic);
+
     console.log("Formatted Matches: !!!!!!!!!", formattedMatches);
 
     return res.status(200).json({
@@ -263,40 +291,41 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-const changeData = async (req, res) => {
-  const {name, gender, bio, age, minAgeP, maxAgeP, genderPref}  = req.body
-  console.log(req.body)
-  try {
-    const userId = req.user.userId; 
-    console.log("User ID from JWT:", userId); 
+  const changeData = async (req, res) => {
+    const {name, gender, bio, age, minAgeP, maxAgeP, genderPref}  = req.body
+    console.log(req.body)
+    try {
+      const userId = req.user.userId; 
+      console.log("User ID from JWT:", userId); 
 
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is missing' });
+      if (!userId) {
+        return res.status(400).json({ error: 'User ID is missing' });
+      }
+
+      const user = await User.findOne({ where: { id: userId } });
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      if (name) user.name = name;
+      if (gender) user.gender = gender;
+      if (bio) user.bio = bio;
+      if (age) user.age = age;
+      if (minAgeP) user.minAgeP = minAgeP;
+      if (maxAgeP) user.maxAgeP = maxAgeP;
+      if (genderPref) user.genderPref = genderPref;
+      console.log(name, gender, bio, age, minAgeP, maxAgeP, genderPref)
+
+      await user.save();
+      return res.status(200).json({ message: 'Profile updated', user: user.toJSON() });
+
+      
+    } catch (err) {
+      console.error("Server error:", err);
+      return res.status(500).json({ error: "Internal server error" });
     }
-
-    const user = await User.findOne({ where: { id: userId } });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    if (name) user.name = name;
-    if (gender) user.gender = gender;
-    if (bio) user.bio = bio;
-    if (age) user.age = age;
-    if (minAgeP) user.minAgeP = minAgeP;
-    if (maxAgeP) user.maxAgeP = maxAgeP;
-    if (genderPref) user.genderPref = genderPref;
-    console.log(name, gender, bio, age, minAgeP, maxAgeP, genderPref)
-
-    await user.save();
-
-    
-  } catch (err) {
-    console.error("Server error:", err);
-    return res.status(500).json({ error: "Internal server error" });
   }
-}
 
 const RejectionMatch = async (req, res) => {
 // I need to add getting req from frontend and then sending the result tro db
@@ -315,12 +344,54 @@ const RejectionMatch = async (req, res) => {
 }
 
 
+
 const AcceptMatch = async (req, res) => {
   
-    const { userId } = req.body;
-    const currentUserId = req.user.userId;
-    console.log("Current User ID (ACCEPT PART):", currentUserId);
-    console.log("Accepted user with the Id:", userId);
+  const { userId: receiverId } = req.body;
+  const senderId = req.user.userId; 
+
+  console.log("REQ BODY THING (2nd ONE IS userid): ", req.body, req.user.userId)
+
+  console.log(senderId, receiverId)
+
+  try {
+
+    const existingRequest = await PendingUser.findOne({
+      where: {
+        senderId,
+        receiverId,
+        status: 'pending',
+      },
+    });
+
+    if (existingRequest) {
+      return res.status(400).json({ message: 'Match request already sent!' });
+    }
+
+    const newRequest = await PendingUser.create({
+      senderId,
+      receiverId,
+      status: 'pending',
+    });
+
+    return res.status(200).json({
+      message: 'Match request sent successfully!',
+      matchRequestId: newRequest.id,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Error sending match request' });
+  }
+};
+
+
+
+
+const pendingrequest = async (req, res) => {
+  const { userId } = req.body;
+  const currentUserId = req.user.userId;
+  console.log("Current User ID (ACCEPT PART):", currentUserId);
+  console.log("Accepted user with the Id:", userId);
 }
 
 

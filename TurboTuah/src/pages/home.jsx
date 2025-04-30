@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Card from "../components/UI/Card";
 import Popup from "reactjs-popup";
 import './home.css'
 
 //  There should be a default profile pic, and also the ability to add a description, age
-
 const Home = () => {
-
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+  const [newPic, setNewPic] = useState('');
   const [userData, setUserData] = useState(null);
   const [errors, setErrors] = useState({});
   const [name, setName] = useState('');
@@ -96,7 +96,6 @@ const Home = () => {
       }
       const updatedData = {name, gender, bio, age, minAgeP, maxAgeP, genderPref}
       console.log(updatedData)
-      console.log(updatedData.pic)
       try {
         const response = await fetch("http://localhost:5000/api/Changeuser", {
           method: "PATCH",
@@ -132,9 +131,46 @@ const Home = () => {
     <div>
       <h1>Profile</h1>
       <Card>
-      <div>add picture</div>
-      <img src={userData.pic} alt="cool pic" />
+      <Popup trigger={<img src={newPic || userData.pic} className="profilepic" alt="default profile picture" />} modal nested>
+        <div id="sigmaMale">
+          <h3>Profile Info</h3>
+          
+          <img src={newPic || userData.pic} alt="Current profile" style={{ width: "50%", borderRadius: "50%" }} />
+          <input
+            type="text"
+            placeholder="Enter new image URL"
+            value={newPic}
+            onChange={(e) => setNewPic(e.target.value)}
+          />
+          <button
+            onClick={async () => {
+              if (!newPic) return;
+              try {
+                const response = await fetch("http://localhost:5000/api/Changeuser", {
+                  method: "PATCH",
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: "include",
+                  body: JSON.stringify({ pic: newPic }),
+                });
 
+                if (response.ok) {
+                  // Refetch or update state manually
+                  const updated = await response.json();
+                  setUserData(updated);
+                  setNewPic('');
+                } else {
+                  console.error("Failed to update picture");
+                }
+              } catch (error) {
+                console.error("Error updating picture:", error);
+              }
+              location.reload()
+            }}
+          >
+            Update Picture
+          </button>
+        </div>
+      </Popup>
       <div>
         <p>Name: {userData.name}</p>
         <p>Email: {userData.email}</p>
@@ -151,10 +187,10 @@ const Home = () => {
 
       <br />
       {/* This should call back to the api, and let the change stuff */}
-      <Popup trigger={<button>Change data</button>} modal nested>
+      <Popup trigger={<button>Edit data</button>} modal nested>
               {(close) => (
                 <>
-                  <form onSubmit={handleChanges}>
+                  <form onSubmit={handleChanges} id="editData">
                     {errors.global && <div className="alert">{errors.global}</div>}
                     <input
                       type="text"

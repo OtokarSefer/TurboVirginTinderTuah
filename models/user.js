@@ -58,6 +58,12 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: true
     },
+    pic: {
+      type: DataTypes.STRING(500),
+      allowNull: false,
+      defaultValue: 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg'
+
+    },
     minAgeP: {
       type: DataTypes.INTEGER,
       allowNull: true

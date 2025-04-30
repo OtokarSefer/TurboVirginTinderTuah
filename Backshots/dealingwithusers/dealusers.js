@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const con = require('../db/db'); 
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
-const { User, PendingUser } = require('../../models');
+const { User, Match } = require('../../models');
 const { Op } = require('sequelize')
 
 
@@ -292,7 +292,7 @@ const authenticateToken = (req, res, next) => {
 };
 
   const changeData = async (req, res) => {
-    const {name, gender, bio, age, minAgeP, maxAgeP, genderPref}  = req.body
+    const {name, gender, bio, age, minAgeP, maxAgeP, genderPref, pic}  = req.body
     console.log(req.body)
     try {
       const userId = req.user.userId; 
@@ -312,10 +312,11 @@ const authenticateToken = (req, res, next) => {
       if (gender) user.gender = gender;
       if (bio) user.bio = bio;
       if (age) user.age = age;
+      if (pic) user.pic = pic;
       if (minAgeP) user.minAgeP = minAgeP;
       if (maxAgeP) user.maxAgeP = maxAgeP;
       if (genderPref) user.genderPref = genderPref;
-      console.log(name, gender, bio, age, minAgeP, maxAgeP, genderPref)
+      console.log(name, gender, bio, age, minAgeP, maxAgeP, genderPref, pic)
 
       await user.save();
       return res.status(200).json({ message: 'Profile updated', user: user.toJSON() });
@@ -346,20 +347,15 @@ const RejectionMatch = async (req, res) => {
 
 
 const AcceptMatch = async (req, res) => {
-  
   const { userId: receiverId } = req.body;
-  const senderId = req.user.userId; 
-
-  console.log("REQ BODY THING (2nd ONE IS userid): ", req.body, req.user.userId)
-
-  console.log(senderId, receiverId)
+  const senderId = req.user.userId;
 
   try {
-
-    const existingRequest = await PendingUser.findOne({
+    const existingRequest = await Match.findOne({
       where: {
-        senderId,
-        receiverId,
+        userId1: senderId,
+        userId2: receiverId,
+        actionUserId: senderId,
         status: 'pending',
       },
     });
@@ -368,9 +364,10 @@ const AcceptMatch = async (req, res) => {
       return res.status(400).json({ message: 'Match request already sent!' });
     }
 
-    const newRequest = await PendingUser.create({
-      senderId,
-      receiverId,
+    const newRequest = await Match.create({
+      userId1: senderId,
+      userId2: receiverId,
+      actionUserId: senderId,
       status: 'pending',
     });
 
@@ -379,10 +376,11 @@ const AcceptMatch = async (req, res) => {
       matchRequestId: newRequest.id,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error creating match:", error);
     return res.status(500).json({ message: 'Error sending match request' });
   }
 };
+
 
 
 

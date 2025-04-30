@@ -2,3 +2,35 @@ img {
     border-radius: 250px;
     border: 1px solid black;
 }
+
+#sigmaMale {
+    background-color: #202020;
+    padding: 30px;
+    border-radius: 5%;
+    width: 80%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.profilepic {
+    object-fit: cover;
+    width: 90%;
+    height: 90%;
+    cursor:pointer;
+    transition: filter 0.3s ease;
+}
+
+.profilepic:hover {
+    filter: brightness(50%)
+}
+
+#editData {
+    width: 80%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #202020;
+    padding: 30px;
+    border-radius: 5%;
+}

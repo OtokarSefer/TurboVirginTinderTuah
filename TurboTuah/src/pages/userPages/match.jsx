@@ -91,6 +91,7 @@ const Match = () => {
         <br />
         {randomMatch && (
           <Card key={randomMatch.id}>
+            <img src={randomMatch.pic} alt="Users prole pic" />
             <p>Name: {randomMatch.name}</p>
             <p>Age: {randomMatch.age || 'Age not available'}</p>
             <p>Gender: {randomMatch.gender}</p>

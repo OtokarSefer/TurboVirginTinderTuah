@@ -33,7 +33,7 @@ module.exports = {
       allowNull: true,
     });
   },
-  
+
 // Add location, religin, interests and other types to filter matches with 
   async down(queryInterface, Sequelize) {
     await queryInterface.removeColumn('Users', 'gender');

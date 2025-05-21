@@ -7,7 +7,7 @@ img {
     background-color: #202020;
     padding: 30px;
     border-radius: 5%;
-    width: 80%;
+    width: 60%;
     display: block;
     margin-left: auto;
     margin-right: auto;
@@ -26,7 +26,7 @@ img {
 }
 
 #editData {
-    width: 80%;
+    width: 60%;
     display: block;
     margin-left: auto;
     margin-right: auto;

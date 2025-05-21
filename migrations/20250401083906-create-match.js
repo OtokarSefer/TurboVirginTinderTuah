@@ -33,16 +33,6 @@ module.exports = {
         allowNull: false,
         defaultValue: 'pending'
       },
-      // Get the user who matched first
-      actionUserId: {
-        type: Sequelize.INTEGER, 
-        allowNull: false,
-        references: {
-          model: 'Users',
-          key: 'id'
-        },
-        onDelete: 'CASCADE'
-      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

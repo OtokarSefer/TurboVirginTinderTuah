@@ -1,6 +1,6 @@
 require("dotenv").config();
 const bcrypt = require('bcryptjs');
-const con = require('../db/db'); 
+const con = require('../db/db');
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
 const { User, Match } = require('../../models');
@@ -9,22 +9,22 @@ const { Op } = require('sequelize')
 
 
 // What more to do? Fix changedata, Get fetching users working correctly,
-//  implement the pending matches for users, and also the rejection, 
+//  implement the pending matches for users, and also the rejection,
 // and actual matching to maybe try and make the chat log.
 
 const captchas = {}
-
+// Temporarily disable captcha for more accounts
 const createUser = async (req, res) => {
     const { email, password, name, captcha } = req.body;
-  
+
     if (!email || !password || !name || !captcha) {
       return res.status(400).json({ error: "Please enter valid username, email, password, captcha, dumass" });
     }
-  
+
     try {
       // Checking if the user already  exists in the database
       const existingUser = await User.findOne({where: {email}})
-      
+
       if (existingUser) {
         return res.status(400).json({ error: "Email already in use." });
       }
@@ -32,23 +32,23 @@ const createUser = async (req, res) => {
       if (captchas[email] !== parseInt(captcha)) {
         return res.status(400).json("Wrong captcha, your bad");
       }
-      
+
 
       delete captchas[email]
 
       // Encrypting the password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
-      
+
       const user = await User.create({
         email,
         password: hashedPassword,
         name,
         pic: 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg'
       });
-  
+
       res.status(201).json({ message: "User registered successfully!" });
-  
+
     } catch (error) {
       console.error("Signup Error:", error);
       res.status(500).json({ error: "Internal Server Error" });
@@ -87,21 +87,21 @@ const loginUser = async (req, res) => {
     console.log(`Login successful! User's email: ${user.email}, User's name: ${user.name}`);
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_TOKEN, { expiresIn: "1h" });
-   
-   
+
+
     res.cookie("authToken", token, {
-      httpOnly: true, 
-      secure: true,  
+      httpOnly: true,
+      secure: true,
       sameSite: "Strict",
-      maxAge: 60 * 60 * 1000, 
+      maxAge: 60 * 60 * 1000,
     });
-   
-   
+
+
     res.json({ token, user: { id: user.id, email: user.email } });
     console.log(token)
 
   } catch (error) {
-    console.error("Server Error:", error);    
+    console.error("Server Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -111,7 +111,7 @@ const sendCaptcha = async (req, res) => {
 
   if (!email) return res.status(400).json({ error: "Email is required" });
 
-  const captcha = Math.floor(100000 + Math.random() * 900000);
+  const captcha = 1;
   captchas[email] = captcha;
 
   const transporter = nodemailer.createTransport({
@@ -119,7 +119,7 @@ const sendCaptcha = async (req, res) => {
     port: 465,
     auth: {
       user: process.env.GNAME,
-      pass: process.env.GPASS, 
+      pass: process.env.GPASS,
     },
   });
 
@@ -139,16 +139,50 @@ const sendCaptcha = async (req, res) => {
   }
 }
 
+// const sendCaptcha = async (req, res) => {
+//   const { email } = req.body;
+
+//   if (!email) return res.status(400).json({ error: "Email is required" });
+
+//   const captcha = Math.floor(100000 + Math.random() * 900000);
+//   captchas[email] = captcha;
+
+//   const transporter = nodemailer.createTransport({
+//     host: "smtp.gmail.com",
+//     port: 465,
+//     auth: {
+//       user: process.env.GNAME,
+//       pass: process.env.GPASS,
+//     },
+//   });
+
+//   const mailOptions = {
+//     from: process.env.GNAME,
+//     to: email,
+//     subject: "Your CAPTCHA Code",
+//     text: `Your verification code is: ${captcha}`,
+//   };
+
+//   try {
+//     await transporter.sendMail(mailOptions);
+//     res.json({ message: "Captcha sent successfully!" });
+//   } catch (error) {
+//     console.error("Email error:", error);
+//     res.status(500).json({ error: "Failed to send captcha email." });
+//   }
+// }
+
+
+
 const getUser = async (req, res) => {
   try {
-    const userId = req.user.userId; // User ID from JWT
-    console.log("User ID from JWT:", userId);
-
+    const userId = req.user.userId; // From JWT
     if (!userId) {
       return res.status(400).json({ error: 'User ID is missing' });
     }
 
-    const user = await User.findOne({ where: { id: userId },
+    const user = await User.findOne({
+      where: { id: userId },
       attributes: [
         'id',
         'name',
@@ -160,26 +194,34 @@ const getUser = async (req, res) => {
         'minAgeP',
         'maxAgeP',
         'genderPref'
+      ],
+      include: [
+        {
+          model: User,
+          as: 'MatchedByUsers', // Getting all of the matches, that are associated with given user
+          attributes: ['id', 'name', 'age', 'bio', 'pic', 'gender']
+        }
       ]
     });
 
+    console.log(user)
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log("User pic from database:", user);
     return res.status(200).json({
       id: user.id,
       name: user.name,
       email: user.email,
       age: user.age,
-      pic: user.get('pic'),
+      pic: user.pic,
       gender: user.gender,
       bio: user.bio,
       minAgeP: user.minAgeP,
       maxAgeP: user.maxAgeP,
       genderPref: user.genderPref,
+      matches: user.MatchedByUsers // full matched user profiles
     });
   } catch (err) {
     console.error("Server error:", err);
@@ -189,10 +231,11 @@ const getUser = async (req, res) => {
 
 
 
+
 const getUsertoMatch = async (req, res) => {
   try {
-    const userId = req.user.userId;   
-    console.log("User ID from JWT:", userId); 
+    const userId = req.user.userId;
+    console.log("User ID from JWT:", userId);
 
     if (!userId) {
       return res.status(400).json({ error: 'User ID is missing' });
@@ -242,8 +285,8 @@ const getUsertoMatch = async (req, res) => {
         'bio',
       ]
     });
-    
-    
+
+
     console.log("Potential Matches:", potentialMatches);
 
     const formattedMatches = potentialMatches.map(match => ({
@@ -281,7 +324,7 @@ const authenticateToken = (req, res, next) => {
   jwt.verify(token, process.env.JWT_TOKEN, (err, user) => {
     if (err) {
       return res.status(403).json({ error: "Invalid or expired token" });
-    }   
+    }
 
 
     console.log("user", user)
@@ -295,8 +338,8 @@ const authenticateToken = (req, res, next) => {
     const {name, gender, bio, age, minAgeP, maxAgeP, genderPref, pic}  = req.body
     console.log(req.body)
     try {
-      const userId = req.user.userId; 
-      console.log("User ID from JWT:", userId); 
+      const userId = req.user.userId;
+      console.log("User ID from JWT:", userId);
 
       if (!userId) {
         return res.status(400).json({ error: 'User ID is missing' });
@@ -321,29 +364,12 @@ const authenticateToken = (req, res, next) => {
       await user.save();
       return res.status(200).json({ message: 'Profile updated', user: user.toJSON() });
 
-      
+
     } catch (err) {
       console.error("Server error:", err);
       return res.status(500).json({ error: "Internal server error" });
     }
   }
-
-const RejectionMatch = async (req, res) => {
-// I need to add getting req from frontend and then sending the result tro db
-
-  const { userId } = req.body;
-  const currentUserId = req.user.userId;
-  console.log("Current User ID (REJECT PART):", currentUserId);
-  console.log("User ID to reject:", userId);
-
-
-
-
-
-
-
-}
-
 
 
 const AcceptMatch = async (req, res) => {
@@ -355,7 +381,6 @@ const AcceptMatch = async (req, res) => {
       where: {
         userId1: senderId,
         userId2: receiverId,
-        actionUserId: senderId,
         status: 'pending',
       },
     });
@@ -367,7 +392,6 @@ const AcceptMatch = async (req, res) => {
     const newRequest = await Match.create({
       userId1: senderId,
       userId2: receiverId,
-      actionUserId: senderId,
       status: 'pending',
     });
 
@@ -382,18 +406,150 @@ const AcceptMatch = async (req, res) => {
 };
 
 
+const Matching = async (req, res) => {
+  const { userId: matched } = req.body;
+  const accepterId = req.user.userId;
+
+  console.log("Accepter ID:", accepterId);
+  console.log("Match sender ID:", matched);
+
+  try {
+    const cmatch = await Match.findOne({
+      where: { userId1: matched, userId2: accepterId },
+      attributes: ['id', 'status'] 
+    });
+
+    if (!cmatch) {
+      return res.status(404).json('Match not found');
+    }
+
+    console.log("This is the current match id!!!", cmatch.id);
+    console.log("This is the current match status!!!", cmatch.status); 
+    console.log("This is the current match status!!!", cmatch.userId1); 
+    console.log("This is the current match status!!!", cmatch.userId2); 
+    console.log("This is the current match status!!!", cmatch.createdAt);
+    console.log("This is the current match status!!!", cmatch.updatedAt);  
+    
 
 
 
-const pendingrequest = async (req, res) => {
-  const { userId } = req.body;
-  const currentUserId = req.user.userId;
-  console.log("Current User ID (ACCEPT PART):", currentUserId);
-  console.log("Accepted user with the Id:", userId);
-}
+    await Match.update(
+      { status: 'accepted'}, 
+      { where: {userId1: matched, userId2: accepterId}}
+    )
+
+    console.log("Match status updated to 'accepted'!");
+
+    return res.status(200).json({ status: 'accepted' });
+
+  } catch (err) {
+    console.error('Error fetching match:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const Reject = async (req, res) => {
+  const { userId: matched } = req.body;
+  const accepterId = req.user.userId;
+
+  console.log("Accepter ID:", accepterId);
+  console.log("Matched User ID:", matched);
+
+  try {
+    const cmatch = await Match.findOne({
+      where: { userId1: matched, userId2: accepterId },
+      attributes: ['id', 'status'] 
+    });
+
+    if (!cmatch) {
+      return res.status(404).json('Match not found');
+    }
+
+    console.log("This is the current match id!!!", cmatch.id);
+    console.log("This is the current match status!!!", cmatch.status); 
+    console.log("This is the current match status!!!", cmatch.userId1); 
+    console.log("This is the current match status!!!", cmatch.userId2); 
+    console.log("This is the current match status!!!", cmatch.createdAt);
+    console.log("This is the current match status!!!", cmatch.updatedAt);  
+    
+
+
+
+    await Match.update(
+      { status: 'rejected'}, 
+      { where: {userId1: matched, userId2: accepterId}}
+    )
+
+    console.log("Match status updated to 'accepted'!");
+
+    return res.status(200).json({ status: 'accepted' });
+
+  } catch (err) {
+    console.error('Error fetching match:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+const getMatches = async (req, res) => {
+    try {
+    const userId = req.user.userId; // From JWT
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is missing' });
+    }
+
+    const user = await User.findOne({
+      where: { id: userId },
+      include: [
+        {
+          model: User,
+          as: 'MatchedByUsers', 
+          attributes: ['id', 'name', 'age', 'bio', 'pic', 'gender'],
+          through: {
+            model: Match, 
+            where: { status: 'accepted' }, 
+            attributes: [] 
+          }
+        }
+      ]
+    });
+
+
+    console.log(user)
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    return res.status(200).json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      age: user.age,
+      pic: user.pic,
+      gender: user.gender,
+      bio: user.bio,
+      minAgeP: user.minAgeP,
+      maxAgeP: user.maxAgeP,
+      genderPref: user.genderPref,
+      matches: user.MatchedByUsers // full matched user profiles
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+
+
 
 
 
 module.exports = { createUser, loginUser,
    sendCaptcha, getUser,
-    authenticateToken, changeData, getUsertoMatch, RejectionMatch, AcceptMatch }
+    authenticateToken, changeData, getUsertoMatch, AcceptMatch, Matching, getMatches }
+
+
+    //  User management, User Auth, Loo need kontrollerid, et testimine oleks kergem!

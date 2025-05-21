@@ -68,26 +68,27 @@ const Loginform = ({ login, setIsLoggedIn, isLoggedIn }) => {
   };
 
   return (
-    
-  <Card className='Loginform'>
-    <h2>Login</h2>
-    <form onSubmit={handleSubmit}>
-      {errors.global && <div className="alert">{errors.global}</div>}
-      <div>
-        <input type="email" placeholder="Email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/>
-        {errors.email && <div className="error">{errors.email}</div>}
-      </div>
-      <div>
-        <input type="password"  placeholder="Password" autoComplete="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        {errors.password && <div className="error" >{errors.password}</div>}
-      </div>
-      <button type="submit" disabled={fulldisabled}>
-        {!fulldisabled ? "Login" : "nah"}
-      </button>
-    </form>
-    {canRun && <Timer onTimerFinish={handleTimerFinish}/>}
-    <Popupad/>
-  </Card>
+  <div id="centercard">
+    <Card className='Loginform'>
+      <h2>Login</h2>
+      <form onSubmit={handleSubmit}>
+        {errors.global && <div className="alert">{errors.global}</div>}
+        <div>
+          <input type="email" placeholder="Email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/>
+          {errors.email && <div className="error">{errors.email}</div>}
+        </div>
+        <div>
+          <input type="password"  placeholder="Password" autoComplete="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          {errors.password && <div className="error" >{errors.password}</div>}
+        </div>
+        <button type="submit" disabled={fulldisabled}>
+          {!fulldisabled ? "Login" : "nah"}
+        </button>
+      </form>
+      {canRun && <Timer onTimerFinish={handleTimerFinish}/>}
+      <Popupad/>
+    </Card>
+  </div>
   );
 }
 

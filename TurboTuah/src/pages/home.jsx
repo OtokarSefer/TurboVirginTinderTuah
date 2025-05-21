@@ -119,162 +119,211 @@ const Home = () => {
 
 
 
+    console.log(userData)
 
     if (!userData) {
       return <div>Loading...</div>;
     }
 
-    
+
+    const handleMatch = async (match) => {
+      try {
+        const response = await fetch("http://localhost:5000/api/Match", {
+          method: "PATCH",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: "include",
+          body: JSON.stringify({ userId: match.id }), // returning the user that was clicked on
+        });
+
+        if (response.ok) {
+          console.log("Everything is alright I hope!");
+        } else {
+            const errorData = await response.json(); 
+            console.log("Something is moldy", errorData);
+        }
+      } catch (error) {
+        console.error("Error verifying session:", error);
+      }
+    };
 
 
   return (
     <div>
-      <h1>Profile</h1>
-      <Card>
-      <Popup trigger={<img src={newPic || userData.pic} className="profilepic" alt="default profile picture" />} modal nested>
-        <div id="sigmaMale">
-          <h3>Profile Info</h3>
-          
-          <img src={newPic || userData.pic} alt="Current profile" style={{ width: "50%", borderRadius: "50%" }} />
-          <input
-            type="text"
-            placeholder="Enter new image URL"
-            value={newPic}
-            onChange={(e) => setNewPic(e.target.value)}
-          />
-          <button
-            onClick={async () => {
-              if (!newPic) return;
-              try {
-                const response = await fetch("http://localhost:5000/api/Changeuser", {
-                  method: "PATCH",
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: "include",
-                  body: JSON.stringify({ pic: newPic }),
-                });
+        <Card>
+          <Popup trigger={<img src={newPic || userData.pic} className="profilepic" alt="default profile picture" />} modal nested>
+            <div id="sigmaMale">
+              <h3>Profile Info</h3>
+              
+              <img src={newPic || userData.pic} alt="Current profile" style={{ width: "50%", borderRadius: "50%" }} />
+              <input
+                type="text"
+                placeholder="Enter new image URL"
+                value={newPic}
+                onChange={(e) => setNewPic(e.target.value)}
+              />
+              <button
+                onClick={async () => {
+                  if (!newPic) return;
+                  try {
+                    const response = await fetch("http://localhost:5000/api/Changeuser", {
+                      method: "PATCH",
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: "include",
+                      body: JSON.stringify({ pic: newPic }),
+                    });
 
-                if (response.ok) {
-                  // Refetch or update state manually
-                  const updated = await response.json();
-                  setUserData(updated);
-                  setNewPic('');
-                } else {
-                  console.error("Failed to update picture");
-                }
-              } catch (error) {
-                console.error("Error updating picture:", error);
-              }
-              location.reload()
-            }}
-          >
-            Update Picture
-          </button>
-        </div>
-      </Popup>
-      <div>
-        <p>Name: {userData.name}</p>
-        <p>Email: {userData.email}</p>
-        <p>Age: {userData.age ? userData.age : 'Enter your age'}</p>
-        <p>Gender: {userData.gender ? userData.gender: 'Enter your gender'}</p>
-        <p>BIO: {userData.bio ? userData.bio : 'Enter your bio'}</p>
-        {
-          userData.genderPref && userData.min && userData.max && (
-            <p>Looking for: {userData.genderPref} in ages between {userData.min} - {userData.max}</p>
-          )
-        }
+                    if (response.ok) {
+                      // Refetch or update state manually
+                      const updated = await response.json();
+                      setUserData(updated);
+                      setNewPic('');
+                    } else {
+                      console.error("Failed to update picture");
+                    }
+                  } catch (error) {
+                    console.error("Error updating picture:", error);
+                  }
+                  location.reload()
+                }}
+              >
+                Update Picture
+              </button>
+            </div>
+          </Popup>
+          <div>
+            <p>Name: {userData.name}</p>
+            <p>Email: {userData.email}</p>
+            <p>Age: {userData.age ? userData.age : 'Enter your age'}</p>
+            <p>Gender: {userData.gender ? userData.gender: 'Enter your gender'}</p>
+            <p>BIO: {userData.bio ? userData.bio : 'Enter your bio'}</p>
+            {
+              userData.genderPref && userData.min && userData.max && (
+                <p>Looking for: {userData.genderPref} in ages between {userData.min} - {userData.max}</p>
+              )
+            }
 
-      </div>
+          </div>
 
-      <br />
-      {/* This should call back to the api, and let the change stuff */}
-      <Popup trigger={<button>Edit data</button>} modal nested>
-              {(close) => (
-                <>
-                  <form onSubmit={handleChanges} id="editData">
-                    {errors.global && <div className="alert">{errors.global}</div>}
-                    <input
-                      type="text"
-                      placeholder="Change name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)} 
-                    />
-                    {errors.name && <div className="error">{errors.name}</div>}
-                    <input
-                      type="number"
-                      placeholder="Enter age"
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)} 
-                    />
-                    {errors.age && <div className="error">{errors.age}</div>}
-                    <input
-                      type="text"
-                      placeholder="Enter gender"
-                      value={gender}
-                      onChange={(e) => setGender(e.target.value)} 
-                    />
-                    {errors.gender && <div className="error">{errors.gender}</div>}
-                    <input
-                      type="text"
-                      placeholder="Enter bio"
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)} 
-                    />
-                    {errors.bio && <div className="error">{errors.bio}</div>}
-                    <input
-                      type="number"
-                      placeholder="Enter min age preference"
-                      value={minAgeP}
-                      onChange={(e) => setminAgeP(e.target.value)} 
-                    />
-                    {errors.min && <div className="error">{errors.min}</div>}
-                    <input
-                      type="number"
-                      placeholder="Enter max age preference"
-                      value={maxAgeP}
-                      onChange={(e) => setmaxAgeP(e.target.value)} 
-                    />
-                    {errors.max && <div className="error">{errors.max}</div>}
-                    
-                    
-                    {errors.minmax && <div className="error">{errors.minmax}</div>}
+          <br />
+          {/* This should call back to the api, and let the change stuff */}
+          <Popup trigger={<button>Edit data</button>} modal nested>
+                  {(close) => (
+                    <>
+                      <form onSubmit={handleChanges} id="editData">
+                        {errors.global && <div className="alert">{errors.global}</div>}
+                        <input
+                          type="text"
+                          placeholder="Change name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)} 
+                        />
+                        {errors.name && <div className="error">{errors.name}</div>}
+                        <input
+                          type="number"
+                          placeholder="Enter age"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)} 
+                        />
+                        {errors.age && <div className="error">{errors.age}</div>}
+                        <p>Choose your gender</p>
+                        <div>
+                          <input
+                            type="radio"
+                            name="gender"
+                            id="M"
+                            value="M"
+                            onChange={(e) => setGender(e.target.value)}
+                          />
+                          <label htmlFor="M">M</label><br />
+
+                          <input
+                            type="radio"
+                            name="gender"
+                            id="F"
+                            value="F"
+                            onChange={(e) => setGender(e.target.value)}
+                          />
+                          <label htmlFor="F">F</label><br />
+                        </div>
+                        {errors.gender && <div className="error">{errors.gender}</div>}
+                        <p></p>
+                        <input
+                          type="text"
+                          placeholder="Enter bio"
+                          value={bio}
+                          onChange={(e) => setBio(e.target.value)} 
+                        />
+                        {errors.bio && <div className="error">{errors.bio}</div>}
+                        <input
+                          type="number"
+                          placeholder="Enter min age preference"
+                          value={minAgeP}
+                          onChange={(e) => setminAgeP(e.target.value)} 
+                        />
+                        {errors.min && <div className="error">{errors.min}</div>}
+                        <input
+                          type="number"
+                          placeholder="Enter max age preference"
+                          value={maxAgeP}
+                          onChange={(e) => setmaxAgeP(e.target.value)} 
+                        />
+                        {errors.max && <div className="error">{errors.max}</div>}
+                        
+                        
+                        {errors.minmax && <div className="error">{errors.minmax}</div>}
 
 
-                    <input
-                      type="text"
-                      placeholder="Enter your gender preferences"
-                      value={genderPref}
-                      onChange={(e) => setgenderPreferences(e.target.value)} 
-                    />
-                    {errors.genderPref && <div className="error">{errors.genderPref}</div>}
-                    <button type="submit">Yes</button>
-                  </form>
+                        <input
+                          type="text"
+                          placeholder="Enter your gender preferences"
+                          value={genderPref}
+                          onChange={(e) => setgenderPreferences(e.target.value)} 
+                        />
+                        {errors.genderPref && <div className="error">{errors.genderPref}</div>}
+                        <button type="submit">Yes</button>
+                      </form>
 
-                </>
-              )}
-      </Popup>
+                    </>
+                  )}
+          </Popup>
+        </Card>
 
-      </Card>
-      <hr />
-      Pending matches
-
-      <Card>
-        Not another card
+      <>
         <hr />
-        <p>Matches:</p>
+        <h2>Pending Matches</h2>
+        <hr />
+
         {userData.matches && userData.matches.length > 0 ? (
-          <ul>
-            {userData.matches.map((match, index) => (
-              <li key={index}>
-                <p><strong>{match.name}</strong></p>
-                <p>Age: {match.age}</p>
-                <p>Bio: {match.bio}</p>
-              </li>
-            ))}
-          </ul>
+          userData.matches.map((match, index) => (
+            <Card key={index} style={{ marginBottom: '3rem' }}>
+              <h3>{match.name}</h3>
+              <p>Id: {match.id}</p>
+              <p>Age: {match.age}</p>
+              <p>Bio: {match.bio}</p>
+              <p>Gender: {match.gender}</p>
+              {match.pic && (
+                <img
+                  src={match.pic}
+                  alt={`${match.name}'s profile`}
+                  style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                />
+              
+              )}
+              <br />
+            <button onClick={() => handleMatch(match)}>Accept</button>
+            {/* Here I have to get the accept button to change the pending in Matches table to accept, then I can output the matched user in its entirety in the chat page, and implement chatting feature */}
+            <button>Block</button>
+            {/* Just sets the given user to rejected and makes the user not appear on the users profile again */}
+            </Card>
+          ))
         ) : (
-          <p>No matches yet</p>
+          <Card>
+            <p>No matches found!</p>
+          </Card>
         )}
-      </Card>
+      </>
 
     </div>
   );

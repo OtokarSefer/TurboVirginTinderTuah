@@ -1,6 +1,7 @@
 import Card from "../../components/UI/Card";
 import { useState, useEffect } from "react";
 import React from "react";
+import './match.css'
 
 
 // Should exclude the user, but give him other users to match on the site with
@@ -86,12 +87,11 @@ const Match = () => {
     }
     
     return (
-      <div className="match">
-        <h1>Swipe for the love of your life</h1>
-        <br />
+      <div className="match" id="mylove">
+
         {randomMatch && (
           <Card key={randomMatch.id}>
-            <img src={randomMatch.pic} alt="Users prole pic" />
+            <img src={randomMatch.pic} alt="Users profile pic" />
             <p>Name: {randomMatch.name}</p>
             <p>Age: {randomMatch.age || 'Age not available'}</p>
             <p>Gender: {randomMatch.gender}</p>

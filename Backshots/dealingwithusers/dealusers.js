@@ -221,7 +221,7 @@ const getUser = async (req, res) => {
       minAgeP: user.minAgeP,
       maxAgeP: user.maxAgeP,
       genderPref: user.genderPref,
-      matches: user.MatchedByUsers // full matched user profiles
+      matches: user.MatchedByUsers // full rejection user profiles
     });
   } catch (err) {
     console.error("Server error:", err);
@@ -248,13 +248,39 @@ const getUsertoMatch = async (req, res) => {
 
     const { minAgeP, maxAgeP, genderPref } = user;
 
+    const notusers = await Match.findAll({
+      where: {
+        [Op.or]: [
+          { userId1: userId },
+          { userId2: userId },
+        ],
+        status: {
+          [Op.in]: ['pending', 'rejected', 'accepted'],
+        },
+      },
+      attributes: ['userId1', 'userId2'],
+    });
+
+    console.log('These are the users, the main user isnt supposed to match with', notusers)
+
+    // A set to store the unique values needed to exclude the already matched users
+    const matchedUserIds = new Set();
+    notusers.forEach(match => {
+      // Checking if it exists in the database
+      if (match.userId1 !== userId) matchedUserIds.add(match.userId1);
+      if (match.userId2 !== userId) matchedUserIds.add(match.userId2);
+    });
+
+
     if (minAgeP == null || maxAgeP == null || !genderPref) {
       return res.status(400).json({ error: 'User preferences are missing or incomplete.' });
     }
 
+
     const potentialMatches = await User.findAll({
       where: {
         id: {
+          [Op.notIn]: Array.from(matchedUserIds),
           [Op.ne]: userId,
         },
         age: {
@@ -407,15 +433,15 @@ const AcceptMatch = async (req, res) => {
 
 
 const Matching = async (req, res) => {
-  const { userId: matched } = req.body;
+  const { userId: rejection } = req.body;
   const accepterId = req.user.userId;
 
   console.log("Accepter ID:", accepterId);
-  console.log("Match sender ID:", matched);
+  console.log("Match sender ID:", rejection);
 
   try {
     const cmatch = await Match.findOne({
-      where: { userId1: matched, userId2: accepterId },
+      where: { userId1: rejection, userId2: accepterId },
       attributes: ['id', 'status'] 
     });
 
@@ -423,19 +449,24 @@ const Matching = async (req, res) => {
       return res.status(404).json('Match not found');
     }
 
+    if (cmatch.status == 'accepted') {
+      return res.status(404).json("You've already accepted this person before!")
+    }
+
+
     console.log("This is the current match id!!!", cmatch.id);
     console.log("This is the current match status!!!", cmatch.status); 
-    console.log("This is the current match status!!!", cmatch.userId1); 
-    console.log("This is the current match status!!!", cmatch.userId2); 
-    console.log("This is the current match status!!!", cmatch.createdAt);
-    console.log("This is the current match status!!!", cmatch.updatedAt);  
+    console.log("This is the current match userId1!!!", cmatch.userId1); 
+    console.log("This is the current match userdId2!!!", cmatch.userId2); 
+    console.log("This is the current match whatever!!!", cmatch.createdAt);
+    console.log("This is the current match whatever!!!", cmatch.updatedAt);  
     
 
 
 
     await Match.update(
       { status: 'accepted'}, 
-      { where: {userId1: matched, userId2: accepterId}}
+      { where: {userId1: rejection, userId2: accepterId}}
     )
 
     console.log("Match status updated to 'accepted'!");
@@ -449,40 +480,44 @@ const Matching = async (req, res) => {
 };
 
 const Reject = async (req, res) => {
-  const { userId: matched } = req.body;
+  const { userId: rejection } = req.body;
   const accepterId = req.user.userId;
 
-  console.log("Accepter ID:", accepterId);
-  console.log("Matched User ID:", matched);
+  console.log("Rejecter ID:", accepterId);
+  console.log("Rejected user ID:", rejection);
 
   try {
     const cmatch = await Match.findOne({
-      where: { userId1: matched, userId2: accepterId },
+      where: { userId1: rejection, userId2: accepterId },
       attributes: ['id', 'status'] 
     });
 
     if (!cmatch) {
-      return res.status(404).json('Match not found');
+      return res.status(404).json('Reject not found');
     }
 
-    console.log("This is the current match id!!!", cmatch.id);
-    console.log("This is the current match status!!!", cmatch.status); 
-    console.log("This is the current match status!!!", cmatch.userId1); 
-    console.log("This is the current match status!!!", cmatch.userId2); 
-    console.log("This is the current match status!!!", cmatch.createdAt);
-    console.log("This is the current match status!!!", cmatch.updatedAt);  
+    if (cmatch.status == 'rejected') {
+      return res.status(404).json("You've already rejected this person before!")
+    }
+
+    console.log("This is the current reject id!!!", cmatch.id);
+    console.log("This is the current reject status!!!", cmatch.status); 
+    console.log("This is the current reject userId1!!!", cmatch.userId1); 
+    console.log("This is the current reject userId2!!!", cmatch.userId2); 
+    console.log("This is the current reject whatever!!!", cmatch.createdAt);
+    console.log("This is the current reject whatever!!!", cmatch.updatedAt);  
     
 
 
 
     await Match.update(
       { status: 'rejected'}, 
-      { where: {userId1: matched, userId2: accepterId}}
+      { where: {userId1: rejection, userId2: accepterId}}
     )
 
-    console.log("Match status updated to 'accepted'!");
+    console.log("Match status updated to 'rejected!!!'");
 
-    return res.status(200).json({ status: 'accepted' });
+    return res.status(200).json({ status: 'rejected' });
 
   } catch (err) {
     console.error('Error fetching match:', err);
@@ -492,7 +527,7 @@ const Reject = async (req, res) => {
 
 
 const getMatches = async (req, res) => {
-    try {
+  try {
     const userId = req.user.userId; // From JWT
 
     if (!userId) {
@@ -504,37 +539,45 @@ const getMatches = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'MatchedByUsers', 
+          as: 'MatchedByUsers',
           attributes: ['id', 'name', 'age', 'bio', 'pic', 'gender'],
           through: {
-            model: Match, 
-            where: { status: 'accepted' }, 
-            attributes: [] 
+            model: Match,
+            where: { status: 'accepted' },
+            attributes: []
+          }
+        },
+        {
+          model: User,
+          as: 'MatchedUsers',
+          attributes: ['id', 'name', 'age', 'bio', 'pic', 'gender'],
+          through: {
+            model: Match,
+            where: { status: 'accepted' },
+            attributes: []
           }
         }
       ]
     });
 
-
-    console.log(user)
-
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    return res.status(200).json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      age: user.age,
-      pic: user.pic,
-      gender: user.gender,
-      bio: user.bio,
-      minAgeP: user.minAgeP,
-      maxAgeP: user.maxAgeP,
-      genderPref: user.genderPref,
-      matches: user.MatchedByUsers // full matched user profiles
+    // Combine both match lists and remove duplicates by user id
+    const allMatches = [...user.MatchedByUsers, ...user.MatchedUsers];
+    const uniqueMatchesMap = new Map();
+
+    allMatches.forEach(match => {
+      if (!uniqueMatchesMap.has(match.id)) {
+        uniqueMatchesMap.set(match.id, match);
+      }
     });
+
+    const uniqueMatches = Array.from(uniqueMatchesMap.values());
+
+    return res.status(200).json({ matches: uniqueMatches });
+
   } catch (err) {
     console.error("Server error:", err);
     return res.status(500).json({ error: "Internal server error" });
@@ -547,9 +590,10 @@ const getMatches = async (req, res) => {
 
 
 
+
 module.exports = { createUser, loginUser,
    sendCaptcha, getUser,
-    authenticateToken, changeData, getUsertoMatch, AcceptMatch, Matching, getMatches }
+    authenticateToken, changeData, getUsertoMatch, AcceptMatch, Matching, Reject , getMatches }
 
 
     //  User management, User Auth, Loo need kontrollerid, et testimine oleks kergem!

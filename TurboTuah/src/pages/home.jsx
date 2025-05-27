@@ -138,15 +138,37 @@ const Home = () => {
         });
 
         if (response.ok) {
-          console.log("Everything is alright I hope!");
+          console.log("Everything is alright I hope with the payload!");
         } else {
             const errorData = await response.json(); 
-            console.log("Something is moldy", errorData);
+            console.log("Something is moldy with matching", errorData);
         }
       } catch (error) {
-        console.error("Error verifying session:", error);
+        console.error("Error verifying match session:", error);
       }
-    };
+    };  
+
+    const handleRejection = async (match) => {
+      try {
+        const response = await fetch("http://localhost:5000/api/Rejection", {
+          method: "PATCH",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: "include",
+          body: JSON.stringify({ userId: match.id }), // returning the user that was clicked on
+        });
+
+        if (response.ok) {
+          console.log("Should send the payload!");
+        } else {
+            const errorData = await response.json(); 
+            console.log("Something is moldy with reject", errorData);
+        }
+      } catch (error) {
+        console.error("Error verifying reject session:", error);
+      }
+    }; 
 
 
   return (
@@ -314,7 +336,7 @@ const Home = () => {
               <br />
             <button onClick={() => handleMatch(match)}>Accept</button>
             {/* Here I have to get the accept button to change the pending in Matches table to accept, then I can output the matched user in its entirety in the chat page, and implement chatting feature */}
-            <button>Block</button>
+            <button onClick={() => handleRejection(match)}>Block</button>
             {/* Just sets the given user to rejected and makes the user not appear on the users profile again */}
             </Card>
           ))

@@ -1,135 +1,192 @@
 import React, { useEffect, useState } from 'react';
+import './chat.css';
 
 function ChatPage() {
   const [matches, setMatches] = useState([]);
   const [selectedMatch, setSelectedMatch] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState({});
   const [newMessage, setNewMessage] = useState('');
 
-  // Fetch mutual matches on load
   useEffect(() => {
     const fetchMatches = async () => {
+      console.log('[ChatPage] Fetching user matches...');
       try {
-        const res = await fetch('http://localhost:5000/api/mutualMatches', {
+        const res = await fetch('http://localhost:5000/api/MutualMatches', {
           method: 'GET',
-          credentials: 'include'
+          credentials: 'include',
         });
 
+        if (!res.ok) {
+          console.error(`[ChatPage] Failed to fetch matches: ${res.status} ${res.statusText}`);
+          return;
+        }
+
         const data = await res.json();
-        console.log('Mutual matches:', data);
-        setMatches(data.matches || []);
+        if (!data) {
+          console.warn('[ChatPage] No data returned from /api/getUser');
+          return;
+        }
+
+        if (!Array.isArray(data.matches)) {
+          console.warn('[ChatPage] data.matches is not an array:', data.matches);
+          setMatches([]);
+          return;
+        }
+
+        console.log(`[ChatPage] Received ${data.matches.length} matches.`);
+        setMatches(data.matches);
       } catch (err) {
-        console.error('Error fetching matches:', err);
+        console.error('[ChatPage] Error fetching matches:', err);
       }
     };
 
     fetchMatches();
   }, []);
 
-  // Fetch messages with selected user
-  const fetchMessages = async (userId) => {
-    try {
-      const res = await fetch(`http://localhost:5000/api/messages/${userId}`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      const data = await res.json();
-      setMessages(data.messages || []);
-    } catch (err) {
-      console.error('Error fetching messages:', err);
-    }
-  };
-
-  // Select a match to chat with
   const handleSelectMatch = (match) => {
-    setSelectedMatch(match);
-    fetchMessages(match.id);
-  };
-
-  // Send a new message
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedMatch) return;
-
-    try {
-      const res = await fetch('http://localhost:5000/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          recipientId: selectedMatch.id,
-          content: newMessage.trim()
-        })
-      });
-
-      if (res.ok) {
-        const sentMessage = await res.json();
-        setMessages(prev => [...prev, sentMessage]);
-        setNewMessage('');
-      }
-    } catch (err) {
-      console.error('Error sending message:', err);
+    if (!match) {
+      console.warn('[ChatPage] handleSelectMatch called with invalid match:', match);
+      return;
     }
+    console.log(`[ChatPage] Match selected: ${match.name} (id: ${match.id})`);
+    setSelectedMatch(match);
   };
+
+  const handleSendMessage = () => {
+    if (!newMessage.trim()) {
+      console.warn('[ChatPage] Tried to send empty message.');
+      return;
+    }
+    if (!selectedMatch) {
+      console.warn('[ChatPage] Tried to send message but no match is selected.');
+      return;
+    }
+
+    const newMsg = {
+      sender: 'me',
+      content: newMessage.trim(),
+      timestamp: new Date().toLocaleTimeString(),
+    };
+
+    setMessages((prev) => {
+      const updated = { ...prev };
+      const id = selectedMatch.id;
+
+      if (!id) {
+        console.error('[ChatPage] Selected match has no id:', selectedMatch);
+        return prev;
+      }
+
+      if (!updated[id]) {
+        updated[id] = [];
+      }
+
+      updated[id] = [...updated[id], newMsg];
+
+      console.log(`[ChatPage] Message sent to match id=${id}: "${newMsg.content}"`);
+
+      return updated;
+    });
+
+    setNewMessage('');
+  };
+
+  const selectedMessages = selectedMatch ? messages[selectedMatch.id] || [] : [];
 
   return (
-    <div style={{ display: 'flex', height: '100vh' }}>
-      {/* Sidebar with matches */}
-      <div style={{ width: '250px', borderRight: '1px solid #ccc', padding: '10px' }}>
-        <h3>Your Matches</h3>
-        {matches.length > 0 ? (
-          matches.map((match) => (
-            <div
-              key={match.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '8px',
-                cursor: 'pointer',
-                backgroundColor: selectedMatch?.id === match.id ? '#eee' : 'transparent'
-              }}
+    <div id="container">
+      <aside>
+        <header>
+          <input type="text" placeholder="search" />
+        </header>
+        <ul>
+          {matches.length === 0 && (
+            <li style={{ padding: '10px', color: '#999' }}>
+              No matches found or failed to load matches.
+            </li>
+          )}
+          {matches.map((match) => (
+            <li
+              key={match.id || Math.random()}
               onClick={() => handleSelectMatch(match)}
+              style={{ cursor: 'pointer' }}
             >
               <img
+                id="homopilt"
                 src={match.pic || 'default-pic.jpg'}
-                alt={match.name}
-                style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }}
+                alt={match.name || 'Unknown'}
+                onError={(e) => {
+                  e.target.src = 'default-pic.jpg';
+                  console.warn(`[ChatPage] Failed to load image for match: ${match.name}`);
+                }}
               />
-              <div>{match.name}</div>
-            </div>
-          ))
-        ) : (
-          <p>No matches found.</p>
-        )}
-      </div>
-
-      {/* Chat area */}
-      <div style={{ flex: 1, padding: '10px', display: 'flex', flexDirection: 'column' }}>
+              <div>
+                <h2>{match.name || 'Unknown'}</h2>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </aside>
+      <main>
         {selectedMatch ? (
           <>
-            <h2>Chat with {selectedMatch.name}</h2>
-            <div style={{ flex: 1, overflowY: 'auto', border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
-              {messages.map((msg, index) => (
-                <div key={index} style={{ marginBottom: '8px' }}>
-                  <strong>{msg.sender === 'me' ? 'You' : selectedMatch.name}:</strong> {msg.content}
-                </div>
+            <header>
+              <img
+                id="homopilt"
+                src={selectedMatch.pic || 'default-pic.jpg'}
+                alt={selectedMatch.name || 'Unknown'}
+                onError={(e) => {
+                  e.target.src = 'default-pic.jpg';
+                  console.warn(`[ChatPage] Failed to load image for selected match: ${selectedMatch.name}`);
+                }}
+              />
+              <div>
+                <h2>Chat with {selectedMatch.name || 'Unknown'}</h2>
+                <h3>{selectedMessages.length} messages</h3>
+              </div>
+            </header>
+            <ul id="chat">
+              {selectedMessages.length === 0 && (
+                <li style={{ padding: '10px', color: '#999' }}>No messages yet.</li>
+              )}
+              {selectedMessages.map((msg, index) => (
+                <li key={index} className={msg.sender === 'me' ? 'me' : 'you'}>
+                  <div className="entete">
+                    <h2>{msg.sender === 'me' ? 'You' : selectedMatch.name || 'Unknown'}</h2>
+                    <h3>{msg.timestamp || 'Unknown time'}</h3>
+                  </div>
+                  <div className="triangle"></div>
+                  <div className="message">{msg.content}</div>
+                </li>
               ))}
-            </div>
-            <div style={{ display: 'flex' }}>
-              <input
-                type="text"
+            </ul>
+            <footer>
+              <textarea
+                placeholder="Type your message"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                style={{ flex: 1, marginRight: '10px' }}
-                placeholder="Type your message..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
               />
-              <button onClick={handleSendMessage}>Send</button>
-            </div>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSendMessage();
+                }}
+              >
+                Send
+              </a>
+            </footer>
           </>
         ) : (
-          <p>Select a match to start chatting.</p>
+          <p style={{ padding: '20px' }}>Select a match to start chatting.</p>
         )}
-      </div>
+      </main>
     </div>
   );
 }

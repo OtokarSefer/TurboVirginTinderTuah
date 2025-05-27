@@ -1,6 +1,6 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const { createUser, loginUser, sendCaptcha, getUser, authenticateToken, changeData, getUsertoMatch, RejectionMatch, AcceptMatch, Matching, getMatches } = require('../dealingwithusers/dealusers'); 
+const { createUser, loginUser, sendCaptcha, getUser, authenticateToken, changeData, getUsertoMatch, RejectionMatch, AcceptMatch, Matching, Reject, getMatches } = require('../dealingwithusers/dealusers'); 
 const router = express.Router();
 
 //  Stop login spam 
@@ -36,6 +36,8 @@ router.post('/Accept', authenticateToken, AcceptMatch)
 
 // Actual Match finalize route
 router.patch('/Match', authenticateToken, Matching)
+
+router.patch('/Rejection', authenticateToken, Reject)
 
 
 // MutualMatches route for the chatting

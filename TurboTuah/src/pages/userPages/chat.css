@@ -29,30 +29,6 @@ aside {
   flex-direction: column;
 }
 
-aside header {
-  padding: 20px;
-  background: #1f2127;
-  border-bottom: 1px solid #444;
-}
-
-aside input {
-  width: 100%;
-  height: 40px;
-  padding: 0 20px;
-  background: #40434d;
-  border: none;
-  border-radius: 4px;
-  color: white;
-  background-image: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/1940306/ico_search.png');
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 20px;
-}
-
-aside input::placeholder {
-  color: #bbb;
-}
-
 aside ul {
   flex-grow: 1;
   margin: 0;
@@ -129,7 +105,7 @@ main header h3 {
 }
 
 #chat li {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 #chat .entete {
@@ -142,7 +118,10 @@ main header h3 {
   padding: 15px 20px;
   border-radius: 10px;
   max-width: 75%;
+  min-width: 30%;
   word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
   font-size: 14px;
 }
 
@@ -169,8 +148,13 @@ main footer {
   background: #1f2127;
 }
 
-main footer textarea {
-  width: 100%;
+.input-container {
+  display: flex;
+  gap: 10px;
+}
+
+.input-container textarea {
+  flex-grow: 1;
   height: 60px;
   padding: 15px;
   border: none;
@@ -179,12 +163,116 @@ main footer textarea {
   font-size: 14px;
 }
 
-main footer a {
-  margin-top: 10px;
-  display: inline-block;
-  color: #6fbced;
+.input-container button {
+  height: 60px;
+  padding: 0 20px;
+  background: #6fbced;
+  color: white;
   font-weight: bold;
-  text-transform: uppercase;
-  text-decoration: none;
-  font-size: 13px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.input-container button:hover {
+  background: #5aa5d1;
+}
+
+@media (max-width: 768px) {
+  #container {
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  aside {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  aside ul {
+    display: flex;
+    flex-direction: row;
+    padding: 10px 0;
+  }
+
+  aside li {
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    width: 80px;
+    text-align: center;
+  }
+
+  aside li img {
+    margin: 0 0 5px;
+    height: 35px;
+    width: 35px;
+  }
+
+  aside li h2 {
+    font-size: 12px;
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  main header {
+    padding: 10px;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  main header img {
+    height: 40px;
+    width: 40px;
+    margin-right: 10px;
+    margin-bottom: 0;
+  }
+
+  main header h2 {
+    font-size: 14px;
+  }
+
+  main header h3 {
+    font-size: 11px;
+  }
+
+  #chat {
+    padding: 10px;
+  }
+
+  #chat .message {
+    max-width: 85%;
+    min-width: 40%;
+    padding: 12px 15px;
+    font-size: 13px;
+  }
+
+  .input-container {
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .input-container textarea {
+    height: 50px;
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .input-container button {
+    height: 50px;
+    padding: 0 15px;
+    font-size: 14px;
+  }
 }

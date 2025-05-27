@@ -588,9 +588,6 @@ const getMatches = async (req, res) => {
 
 
 
-
-
-
 module.exports = { createUser, loginUser,
    sendCaptcha, getUser,
     authenticateToken, changeData, getUsertoMatch, AcceptMatch, Matching, Reject , getMatches }

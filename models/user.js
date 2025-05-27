@@ -23,19 +23,15 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "userId2", 
         otherKey: "userId1"    
       });
-
-      User.belongsToMany(User, {
-        through: models.UserRejections, 
-        as: "RejectedUsers", 
-        foreignKey: "userId1", 
-        otherKey: "userId2" 
+      User.hasMany(models.Message, {
+        foreignKey: 'senderId',
+        as: 'sentMessages'
       });
       
-      User.belongsToMany(User, { 
-        through: models.UserRejections, 
-        as: "RejectedByUsers",  
-        foreignKey: "userId2", 
-        otherKey: "userId1"    
+      // A user can receive many messages
+      User.hasMany(models.Message, {
+        foreignKey: 'receiverId',
+        as: 'receivedMessages'
       });
     }
   }

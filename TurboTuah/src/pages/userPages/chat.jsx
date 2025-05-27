@@ -1,104 +1,121 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { io } from 'socket.io-client';
 import './chat.css';
 
 function ChatPage() {
+  const [userId, setUserId] = useState(null);
   const [matches, setMatches] = useState([]);
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [messages, setMessages] = useState({});
   const [newMessage, setNewMessage] = useState('');
+  const socketRef = useRef();
+
 
   useEffect(() => {
-    const fetchMatches = async () => {
-      console.log('[ChatPage] Fetching user matches...');
-      try {
-        const res = await fetch('http://localhost:5000/api/MutualMatches', {
-          method: 'GET',
-          credentials: 'include',
-        });
-
-        if (!res.ok) {
-          console.error(`[ChatPage] Failed to fetch matches: ${res.status} ${res.statusText}`);
-          return;
-        }
-
-        const data = await res.json();
-        if (!data) {
-          console.warn('[ChatPage] No data returned from /api/getUser');
-          return;
-        }
-
-        if (!Array.isArray(data.matches)) {
-          console.warn('[ChatPage] data.matches is not an array:', data.matches);
-          setMatches([]);
-          return;
-        }
-
-        console.log(`[ChatPage] Received ${data.matches.length} matches.`);
-        setMatches(data.matches);
-      } catch (err) {
-        console.error('[ChatPage] Error fetching matches:', err);
-      }
-    };
-
-    fetchMatches();
+    fetch('http://localhost:5000/auth/verify', {
+      credentials: 'include',
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated) setUserId(data.userId);
+      });
   }, []);
 
-  const handleSelectMatch = (match) => {
-    if (!match) {
-      console.warn('[ChatPage] handleSelectMatch called with invalid match:', match);
-      return;
-    }
-    console.log(`[ChatPage] Match selected: ${match.name} (id: ${match.id})`);
-    setSelectedMatch(match);
-  };
+    useEffect(() => {
+      if (!userId) return;
+
+      // Initialize socket only once
+      socketRef.current = io('http://localhost:5000', { withCredentials: true });
+
+      // Identify the user to backend
+      socketRef.current.emit('identify', userId);
+
+      // Clear any previous listener before attaching a new one
+      socketRef.current.off('receiveMessage');
+      socketRef.current.on('receiveMessage', ({ senderId, receiverId, content, timestamp }) => {
+        const otherUserId = senderId === userId ? receiverId : senderId;
+
+        setMessages(prevMessages => {
+          const updatedMessages = { ...prevMessages };
+          if (!updatedMessages[otherUserId]) updatedMessages[otherUserId] = [];
+          updatedMessages[otherUserId].push({
+            sender: senderId === userId ? 'me' : 'you',
+            content,
+            timestamp,
+          });
+          return updatedMessages;
+        });
+      });
+
+      // Cleanup on unmount or userId change
+      return () => {
+        if (socketRef.current) {
+          socketRef.current.disconnect();
+          socketRef.current = null;
+        }
+      };
+    }, [userId]);
+
+    useEffect(() => {
+      const fetchMatches = async () => {
+        try {
+          const res = await fetch('http://localhost:5000/api/MutualMatches', {
+            method: 'GET',
+            credentials: 'include',
+          });
+
+          if (!res.ok) return;
+
+          const data = await res.json();
+          if (!data || !Array.isArray(data.matches)) {
+            setMatches([]);
+            return;
+          }
+
+          setMatches(data.matches);
+        } catch (err) {
+          console.error(err);
+        }
+      };
+
+      fetchMatches();
+    }, []);
+
+    const handleSelectMatch = (match) => {
+      setSelectedMatch(match);
+    };
 
   const handleSendMessage = () => {
-    if (!newMessage.trim()) {
-      console.warn('[ChatPage] Tried to send empty message.');
-      return;
-    }
-    if (!selectedMatch) {
-      console.warn('[ChatPage] Tried to send message but no match is selected.');
-      return;
-    }
+    if (!newMessage.trim() || !selectedMatch) return;
 
-    const newMsg = {
-      sender: 'me',
+    const message = {
+      receiverId: selectedMatch.id,
       content: newMessage.trim(),
       timestamp: new Date().toLocaleTimeString(),
     };
 
-    setMessages((prev) => {
+    // Emit message to backend
+    socketRef.current.emit('sendMessage', message);
+
+    // Update messages locally immediately
+    setMessages(prev => {
       const updated = { ...prev };
-      const id = selectedMatch.id;
-
-      if (!id) {
-        console.error('[ChatPage] Selected match has no id:', selectedMatch);
-        return prev;
-      }
-
-      if (!updated[id]) {
-        updated[id] = [];
-      }
-
-      updated[id] = [...updated[id], newMsg];
-
-      console.log(`[ChatPage] Message sent to match id=${id}: "${newMsg.content}"`);
-
+      if (!updated[selectedMatch.id]) updated[selectedMatch.id] = [];
+      updated[selectedMatch.id] = [
+        ...updated[selectedMatch.id],
+        { sender: 'me', content: message.content, timestamp: message.timestamp },
+      ];
       return updated;
     });
 
     setNewMessage('');
-  };
+  }
 
   const selectedMessages = selectedMatch ? messages[selectedMatch.id] || [] : [];
 
   return (
     <div id="container">
       <aside>
-        <header>
-          <input type="text" placeholder="search" />
-        </header>
         <ul>
           {matches.length === 0 && (
             <li style={{ padding: '10px', color: '#999' }}>
@@ -149,38 +166,31 @@ function ChatPage() {
               {selectedMessages.length === 0 && (
                 <li style={{ padding: '10px', color: '#999' }}>No messages yet.</li>
               )}
-              {selectedMessages.map((msg, index) => (
-                <li key={index} className={msg.sender === 'me' ? 'me' : 'you'}>
-                  <div className="entete">
-                    <h2>{msg.sender === 'me' ? 'You' : selectedMatch.name || 'Unknown'}</h2>
-                    <h3>{msg.timestamp || 'Unknown time'}</h3>
-                  </div>
-                  <div className="triangle"></div>
-                  <div className="message">{msg.content}</div>
-                </li>
-              ))}
+{selectedMessages.filter((msg, index, arr) => {
+  if (index === 0) return true;
+  const prev = arr[index - 1];
+  return !(msg.content === prev.content && msg.sender === prev.sender);
+}).map((msg, index) => (
+  <li key={index} className={msg.sender === 'me' ? 'me' : 'you'}>
+    <div className="message">{msg.content}</div>
+  </li>
+))}
             </ul>
             <footer>
-              <textarea
-                placeholder="Type your message"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-              />
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleSendMessage();
-                }}
-              >
-                Send
-              </a>
+              <div className="input-container">
+                <textarea
+                  placeholder="Type your message"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                />
+                <button onClick={handleSendMessage}>Send</button>
+              </div>
             </footer>
           </>
         ) : (
@@ -192,3 +202,4 @@ function ChatPage() {
 }
 
 export default ChatPage;
+ 

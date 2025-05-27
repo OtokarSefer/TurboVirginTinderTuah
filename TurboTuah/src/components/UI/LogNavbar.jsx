@@ -16,9 +16,13 @@ const LogNavbar = ({ setIsLoggedIn }) => {
       <ul role="menubar">
         <li><strong>TurboTinder</strong></li>
       </ul>
+      <head>
+        <link rel="shortcut icon" type="image/x-icon" href="favicon.svg" />
+      </head>
+
       <ul role="menuitem">
-        <li><Link to="/home">Me & myself</Link></li>
-        <li><Link to="/match">Match w noone</Link></li>
+        <li><Link to="/home">Profile</Link></li>
+        <li><Link to="/match">Matches</Link></li>
         <li><Link to="/chat">Chat</Link></li>
         <li><button onClick={handleLogout}>Logout</button></li>
       </ul>

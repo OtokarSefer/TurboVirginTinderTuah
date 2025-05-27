@@ -2,35 +2,43 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const authRoutes = require('./router/authRoutes');
-const app = express();
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 
+const app = express();
 
+const http = require("http");
+const server = http.createServer(app);
+
+const { Server } = require("socket.io");
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PATCH"],
+    credentials: true,
+  }
+});
 
 
 app.use(express.json());
-app.use(cookieParser()); 
+app.use(cookieParser());
+
 app.use(
   cors({
     origin: "http://localhost:5173",
     methods: ['GET', 'POST', 'PATCH'],
-    credentials: true, 
+    credentials: true,
   })
 );
 
-
-// PLACE EVERYTHING NEATLY IN FILES, to avoid confusion i guess. nah
-
 app.use('/api', authRoutes);
-
 
 app.get("/", (req, res) => {
   res.send("Server is running!");
 });
 
 app.get("/auth/verify", (req, res) => {
-  const token = req.cookies.authToken; 
+  const token = req.cookies.authToken;
 
   if (!token) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -44,12 +52,53 @@ app.get("/auth/verify", (req, res) => {
   }
 });
 
-
 app.post("/logout", (req, res) => {
   res.clearCookie("authToken");
   return res.json({ message: "Logged out successfully" });
 });
 
+const users = new Map();
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  let currentUserId = null;
+
+  socket.on('identify', (userId) => {
+    currentUserId = userId;
+    users.set(userId, socket.id);
+    console.log(`User identified: ${userId} with socket ${socket.id}`);
+  });
+
+  socket.on('sendMessage', ({ receiverId, content, timestamp }) => {
+    if (!currentUserId) {
+      console.log('sendMessage received but sender not identified yet');
+      return;
+    }
+
+    const receiverSocketId = users.get(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('receiveMessage', {
+        senderId: currentUserId,
+        receiverId,
+        content,
+        timestamp,
+      });
+    }
+
+    // You can add DB save logic here
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+    if (currentUserId) {
+      users.delete(currentUserId);
+    }
+  });
+});
+
+PORT = 5000
+
+server.listen(PORT, () => {
+  console.log(`Server and socket.io running on http://localhost:${PORT}`);
+});

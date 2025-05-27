@@ -10,7 +10,7 @@ module.exports = {
     // Simulate name pool for variety
     const names = ['Alex', 'Jamie', 'Taylor', 'Jordan', 'Morgan', 'Sam', 'Charlie', 'Riley', 'Casey', 'Drew'];
 
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 50; i++) {
       // Random age bracket
       const ageBrackets = [
         [18, 25],

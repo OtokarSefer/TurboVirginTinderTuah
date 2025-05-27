@@ -56,6 +56,7 @@ const createUser = async (req, res) => {
 };
 
 
+
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -87,7 +88,6 @@ const loginUser = async (req, res) => {
     console.log(`Login successful! User's email: ${user.email}, User's name: ${user.name}`);
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_TOKEN, { expiresIn: "1h" });
-
 
     res.cookie("authToken", token, {
       httpOnly: true,
@@ -172,8 +172,6 @@ const sendCaptcha = async (req, res) => {
 //   }
 // }
 
-
-
 const getUser = async (req, res) => {
   try {
     const userId = req.user.userId; // From JWT
@@ -228,9 +226,6 @@ const getUser = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
-
 
 const getUsertoMatch = async (req, res) => {
   try {
@@ -312,7 +307,6 @@ const getUsertoMatch = async (req, res) => {
       ]
     });
 
-
     console.log("Potential Matches:", potentialMatches);
 
     const formattedMatches = potentialMatches.map(match => ({
@@ -338,7 +332,6 @@ const getUsertoMatch = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-
 
 const authenticateToken = (req, res, next) => {
   const token = req.cookies.authToken || req.headers['authorization']?.split(' ')[1];
@@ -397,7 +390,6 @@ const authenticateToken = (req, res, next) => {
     }
   }
 
-
 const AcceptMatch = async (req, res) => {
   const { userId: receiverId } = req.body;
   const senderId = req.user.userId;
@@ -431,7 +423,6 @@ const AcceptMatch = async (req, res) => {
   }
 };
 
-
 const Matching = async (req, res) => {
   const { userId: rejection } = req.body;
   const accepterId = req.user.userId;
@@ -453,7 +444,6 @@ const Matching = async (req, res) => {
       return res.status(404).json("You've already accepted this person before!")
     }
 
-
     console.log("This is the current match id!!!", cmatch.id);
     console.log("This is the current match status!!!", cmatch.status); 
     console.log("This is the current match userId1!!!", cmatch.userId1); 
@@ -461,9 +451,6 @@ const Matching = async (req, res) => {
     console.log("This is the current match whatever!!!", cmatch.createdAt);
     console.log("This is the current match whatever!!!", cmatch.updatedAt);  
     
-
-
-
     await Match.update(
       { status: 'accepted'}, 
       { where: {userId1: rejection, userId2: accepterId}}
@@ -507,9 +494,6 @@ const Reject = async (req, res) => {
     console.log("This is the current reject whatever!!!", cmatch.createdAt);
     console.log("This is the current reject whatever!!!", cmatch.updatedAt);  
     
-
-
-
     await Match.update(
       { status: 'rejected'}, 
       { where: {userId1: rejection, userId2: accepterId}}
@@ -524,7 +508,6 @@ const Reject = async (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 
 const getMatches = async (req, res) => {
   try {
@@ -584,13 +567,19 @@ const getMatches = async (req, res) => {
   }
 };
 
-
-
-
-
-module.exports = { createUser, loginUser,
-   sendCaptcha, getUser,
-    authenticateToken, changeData, getUsertoMatch, AcceptMatch, Matching, Reject , getMatches }
+module.exports = { 
+  createUser, 
+  loginUser,
+  sendCaptcha, 
+  getUser,
+  authenticateToken, 
+  changeData, 
+  getUsertoMatch, 
+  AcceptMatch, 
+  Matching, 
+  Reject, 
+  getMatches 
+}
 
 
     //  User management, User Auth, Loo need kontrollerid, et testimine oleks kergem!

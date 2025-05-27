@@ -9,7 +9,7 @@ function ChatPage() {
   const [messages, setMessages] = useState({});
   const [newMessage, setNewMessage] = useState('');
   const socketRef = useRef();
-
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     fetch('http://localhost:5000/auth/verify', {
@@ -21,69 +21,90 @@ function ChatPage() {
       });
   }, []);
 
-    useEffect(() => {
-      if (!userId) return;
+  useEffect(() => {
+    if (!userId) return;
 
-      // Initialize socket only once
-      socketRef.current = io('http://localhost:5000', { withCredentials: true });
+    socketRef.current = io('http://localhost:5000', { withCredentials: true });
 
-      // Identify the user to backend
-      socketRef.current.emit('identify', userId);
+    socketRef.current.emit('identify', userId);
 
-      // Clear any previous listener before attaching a new one
-      socketRef.current.off('receiveMessage');
-      socketRef.current.on('receiveMessage', ({ senderId, receiverId, content, timestamp }) => {
-        const otherUserId = senderId === userId ? receiverId : senderId;
+    socketRef.current.off('receiveMessage');
+    socketRef.current.on('receiveMessage', ({ senderId, receiverId, content, timestamp }) => {
+      const otherUserId = senderId === userId ? receiverId : senderId;
 
-        setMessages(prevMessages => {
-          const updatedMessages = { ...prevMessages };
-          if (!updatedMessages[otherUserId]) updatedMessages[otherUserId] = [];
-          updatedMessages[otherUserId].push({
-            sender: senderId === userId ? 'me' : 'you',
-            content,
-            timestamp,
-          });
-          return updatedMessages;
+      setMessages(prevMessages => {
+        const updatedMessages = { ...prevMessages };
+        if (!updatedMessages[otherUserId]) updatedMessages[otherUserId] = [];
+        updatedMessages[otherUserId].push({
+          sender: senderId === userId ? 'me' : 'you',
+          content,
+          timestamp,
         });
+        return updatedMessages;
+      });
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/MutualMatches', {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (!data || !Array.isArray(data.matches)) {
+          setMatches([]);
+          return;
+        }
+
+        setMatches(data.matches);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchMatches();
+  }, []);
+
+  const handleSelectMatch = async (match) => {
+    setSelectedMatch(match);
+
+    if (!userId || !match?.id) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/messages/${userId}/${match.id}`, {
+        credentials: 'include',
       });
 
-      // Cleanup on unmount or userId change
-      return () => {
-        if (socketRef.current) {
-          socketRef.current.disconnect();
-          socketRef.current = null;
-        }
-      };
-    }, [userId]);
+      if (!res.ok) throw new Error('Failed to fetch messages');
 
-    useEffect(() => {
-      const fetchMatches = async () => {
-        try {
-          const res = await fetch('http://localhost:5000/api/MutualMatches', {
-            method: 'GET',
-            credentials: 'include',
-          });
+      const data = await res.json();
 
-          if (!res.ok) return;
+      const formattedMessages = data.map(msg => ({
+        sender: msg.senderId === userId ? 'me' : 'you',
+        content: msg.text,
+        timestamp: msg.createdAt,
+      }));
 
-          const data = await res.json();
-          if (!data || !Array.isArray(data.matches)) {
-            setMatches([]);
-            return;
-          }
-
-          setMatches(data.matches);
-        } catch (err) {
-          console.error(err);
-        }
-      };
-
-      fetchMatches();
-    }, []);
-
-    const handleSelectMatch = (match) => {
-      setSelectedMatch(match);
-    };
+      setMessages(prevMessages => ({
+        ...prevMessages,
+        [match.id]: formattedMessages,
+      }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleSendMessage = () => {
     if (!newMessage.trim() || !selectedMatch) return;
@@ -94,10 +115,8 @@ function ChatPage() {
       timestamp: new Date().toLocaleTimeString(),
     };
 
-    // Emit message to backend
     socketRef.current.emit('sendMessage', message);
 
-    // Update messages locally immediately
     setMessages(prev => {
       const updated = { ...prev };
       if (!updated[selectedMatch.id]) updated[selectedMatch.id] = [];
@@ -109,9 +128,20 @@ function ChatPage() {
     });
 
     setNewMessage('');
-  }
+  };
 
   const selectedMessages = selectedMatch ? messages[selectedMatch.id] || [] : [];
+
+useEffect(() => {
+  const container = document.getElementById('chat');
+  if (!container || !messagesEndRef.current) return;
+
+  const timeout = setTimeout(() => {
+    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  }, 50);
+
+  return () => clearTimeout(timeout);
+}, [messages, selectedMatch]);
 
   return (
     <div id="container">
@@ -163,22 +193,42 @@ function ChatPage() {
               </div>
             </header>
             <ul id="chat">
-              {selectedMessages.length === 0 && (
-                <li style={{ padding: '10px', color: '#999' }}>No messages yet.</li>
-              )}
-{selectedMessages.filter((msg, index, arr) => {
-  if (index === 0) return true;
-  const prev = arr[index - 1];
-  return !(msg.content === prev.content && msg.sender === prev.sender);
-}).map((msg, index) => (
-  <li key={index} className={msg.sender === 'me' ? 'me' : 'you'}>
-    <div className="message">{msg.content}</div>
-  </li>
-))}
+              {selectedMessages.filter((msg, index, arr) => {
+                if (index === 0) return true;
+                const prev = arr[index - 1];
+                return !(msg.content === prev.content && msg.sender === prev.sender);
+              }).map((msg, index) => {
+                const isImage = /\.(gif|jpe?g|png)(?=[/?]|$)/i.test(msg.content) 
+                || /images\.steamusercontent\.com/.test(msg.content)
+                || /\?(imw|imh|ima|impolicy|imcolor)/.test(msg.content); 
+
+                return (
+                  <li key={index} className={msg.sender === 'me' ? 'me' : 'you'}>
+                    <div className="message">
+                      {isImage ? (
+                        <img
+                          src={msg.content}
+                          alt="image"
+                          style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '8px' }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            console.warn(`Failed to load image: ${msg.content}`);
+                          }}
+                        />
+                      ) : (
+                        msg.content
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+
+              <div ref={messagesEndRef} />
             </ul>
             <footer>
               <div className="input-container">
                 <textarea
+                  maxLength={250}
                   placeholder="Type your message"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
@@ -202,4 +252,3 @@ function ChatPage() {
 }
 
 export default ChatPage;
- 

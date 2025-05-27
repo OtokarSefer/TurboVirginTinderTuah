@@ -1,3 +1,5 @@
+const { Message } = require('../models');
+const { Op } = require('sequelize');
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -70,23 +72,28 @@ io.on('connection', (socket) => {
     console.log(`User identified: ${userId} with socket ${socket.id}`);
   });
 
-  socket.on('sendMessage', ({ receiverId, content, timestamp }) => {
-    if (!currentUserId) {
-      console.log('sendMessage received but sender not identified yet');
-      return;
-    }
+  socket.on('sendMessage', async ({ receiverId, content, timestamp }) => {
+    if (!currentUserId) return;
 
-    const receiverSocketId = users.get(receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit('receiveMessage', {
+    try {
+      const msg = await Message.create({
         senderId: currentUserId,
         receiverId,
-        content,
-        timestamp,
+        text: content,
       });
-    }
 
-    // You can add DB save logic here
+      const receiverSocketId = users.get(receiverId);
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit('receiveMessage', {
+          senderId: currentUserId,
+          receiverId,
+          content: msg.text,
+          timestamp: msg.createdAt, 
+        });
+      }
+    } catch (err) {
+      console.error('Error saving message:', err);
+    }
   });
 
   socket.on('disconnect', () => {
@@ -96,6 +103,28 @@ io.on('connection', (socket) => {
     }
   });
 });
+
+app.get('/api/messages/:userId/:otherUserId', async (req, res) => {
+  const { userId, otherUserId } = req.params;
+
+  try {
+    const chatHistory = await Message.findAll({
+      where: {
+        [Op.or]: [
+          { senderId: userId, receiverId: otherUserId },
+          { senderId: otherUserId, receiverId: userId },
+        ]
+      },
+      order: [['createdAt', 'ASC']],
+    });
+
+    res.json(chatHistory);
+  } catch (error) {
+    console.error('Error fetching chat history:', error);
+    res.status(500).json({ error: 'Failed to fetch chat history' });
+  }
+});
+
 
 PORT = 5000
 
